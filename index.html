@@ -3,49 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DITP | GALAXY HUB v17.0</title>
+    <title>DITP | GALAXY COMMAND v18.1</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { --ditp-green: #31ada1; --ditp-orange: #f37d26; --bg: #010409; }
         body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; touch-action: pan-y; }
         .nebula { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at 50% 50%, #0a192f 0%, #010409 100%); }
-        
         .orb { width: 55px; height: 55px; position: absolute; cursor: pointer; transition: 0.5s; z-index: 10; }
-        .orb-core { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(49, 173, 161, 0.3); background: radial-gradient(circle, rgba(49, 173, 161, 0.1) 0%, transparent 70%); animation: breathe 4s infinite ease-in-out; }
+        .orb-core { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(49, 173, 161, 0.3); background: radial-gradient(circle, rgba(49, 173, 161, 0.1) 0%, transparent 70%); animation: breathe 4s infinite; }
         .completed .orb-core { border-color: var(--ditp-green); box-shadow: 0 0 30px var(--ditp-green); background: rgba(49, 173, 161, 0.2); }
         .active .orb-core { border-color: var(--ditp-orange); box-shadow: 0 0 15px var(--ditp-orange); }
         .mascot-emoji { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); font-size: 22px; animation: float 3s infinite; }
-        
         @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.1); opacity: 0.8; } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        
         .neural-svg { position: absolute; inset: 0; width: 100%; height: 8500px; pointer-events: none; z-index: 1; }
         .flow-line { fill: none; stroke: var(--ditp-green); stroke-width: 0.7; stroke-dasharray: 5, 15; animation: flow 20s linear infinite; opacity: 0.15; }
         @keyframes flow { to { stroke-dashoffset: -300; } }
-        
         .hud { background: rgba(1, 4, 9, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(49, 173, 161, 0.2); }
-        .key-btn { width: 60px; height: 60px; border: 1px solid rgba(49, 173, 161, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; color: var(--ditp-green); cursor: pointer; }
+        .key-btn { width: 55px; height: 55px; border: 1px solid rgba(49, 173, 161, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; color: var(--ditp-green); cursor: pointer; }
         .key-btn:active { background: var(--ditp-green); color: #000; }
     </style>
 </head>
 <body>
 <div class="nebula"></div>
 <svg class="neural-svg" id="neural-net"></svg>
-
 <div class="relative z-10">
     <header class="hud sticky top-0 p-4 flex justify-between items-center z-50">
         <div class="flex items-center gap-4">
             <img src="Logo-chia-se-trach-nhiem.png" class="w-10 h-10" onerror="this.src='https://via.placeholder.com/40'">
             <div>
-                <h1 class="text-[9px] font-black tracking-widest uppercase italic">DITP GALAXY v17.0</h1>
+                <h1 class="text-[9px] font-black tracking-widest uppercase italic">DITP GALAXY v18.1</h1>
                 <div class="flex items-center gap-2 mt-0.5">
                     <div class="w-20 bg-white/5 h-1 rounded-full overflow-hidden"><div id="p-bar" class="h-full bg-[#31ada1] transition-all duration-500"></div></div>
-                    <span id="sync-label" class="text-[8px] text-[#31ada1] font-bold uppercase tracking-tighter">Syncing...</span>
+                    <span id="sync-label" class="text-[8px] text-[#31ada1] font-bold uppercase tracking-tighter italic">Connecting...</span>
                 </div>
             </div>
         </div>
-        <button onclick="showAuth()" id="auth-btn" class="text-[8px] border border-[#31ada1]/40 px-4 py-1.5 rounded-full text-[#31ada1] uppercase">Admin</button>
+        <button onclick="showAuth()" id="auth-btn" class="text-[8px] border border-[#31ada1]/40 px-4 py-1.5 rounded-full text-[#31ada1] uppercase">Commander</button>
     </header>
     <main id="star-map" class="relative w-full min-h-[8500px] pt-16 px-6"></main>
 </div>
@@ -53,7 +48,7 @@
 <div id="auth-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:1000; align-items:center; justify-content:center; backdrop-filter: blur(20px);">
     <div class="text-center w-64">
         <div class="flex gap-4 justify-center mb-10" id="auth-dots">
-            <div class="w-3 h-3 rounded-full border border-[#31ada1]"></div><div class="w-3 h-3 rounded-full border border-[#31ada1]"></div><div class="w-3 h-3 rounded-full border border-[#31ada1]"></div><div class="w-3 h-3 rounded-full border border-[#31ada1]"></div>
+            <div class="dot w-3 h-3 rounded-full border border-[#31ada1]"></div><div class="dot w-3 h-3 rounded-full border border-[#31ada1]"></div><div class="dot w-3 h-3 rounded-full border border-[#31ada1]"></div><div class="dot w-3 h-3 rounded-full border border-[#31ada1]"></div>
         </div>
         <div class="grid grid-cols-3 gap-4 mb-8">
             <button onclick="pressNum('1')" class="key-btn">1</button><button onclick="pressNum('2')" class="key-btn">2</button><button onclick="pressNum('3')" class="key-btn">3</button>
@@ -80,11 +75,16 @@
         render();
         try {
             supabaseClient = supabase.createClient(URL, KEY);
-            // Kéo dữ liệu 
             await fetchCloud();
-            // Thiết lập đồng bộ mỗi 3 giây
-            setInterval(fetchCloud, 3000);
-        } catch (e) { document.getElementById('sync-label').innerText = "OFFLINE"; }
+            
+            // KÍCH HOẠT ĐỒNG BỘ THỜI GIAN THỰC
+            supabaseClient
+                .channel('ditp-sync')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, () => fetchCloud())
+                .subscribe();
+
+            document.getElementById('sync-label').innerText = "VŨ TRỤ ĐÃ KẾT NỐI";
+        } catch (e) { document.getElementById('sync-label').innerText = "MẤT KẾT NỐI"; }
     }
 
     async function fetchCloud() {
@@ -94,7 +94,6 @@
                 const m = missions.find(x => x.id === row.id);
                 if (m) m.status = row.status;
             });
-            document.getElementById('sync-label').innerText = "LIVE GALAXY";
             render();
         }
     }
@@ -105,19 +104,8 @@
         if (id > 1 && !missions[id-2].status && !m.status) return;
         
         const nextStatus = !m.status;
-        
-        // DÙNG RPC ĐỂ ÉP CLOUD GHI ĐÈ NGAY LẬP TỨC
-        const { error } = await supabaseClient.rpc('update_mission_status', { 
-            m_id: id, 
-            m_status: nextStatus 
-        });
-
-        if (!error) {
-            m.status = nextStatus;
-            render();
-        } else {
-            alert("Lỗi kết nối. Hãy đảm bảo đã chạy SQL Script trên Supabase!");
-        }
+        const { error } = await supabaseClient.from('missions').upsert({ id: id, status: nextStatus });
+        if (!error) { m.status = nextStatus; render(); }
     }
 
     function render() {
@@ -158,7 +146,7 @@
             if (pin === "1909") {
                 isAdmin = true;
                 document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('auth-btn').innerText = "MASTER";
+                document.getElementById('auth-btn').innerText = "CHỈ HUY DITP";
                 render();
             } else if (pin.length === 4) setTimeout(clearPin, 300);
         }
