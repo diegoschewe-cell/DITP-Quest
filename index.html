@@ -2,226 +2,170 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>DITP | GALAXY COMMAND v9.0</title>
+    <title>DITP | THE MULTIVERSE v12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root { --neon-blue: #00f2ff; --neon-purple: #bc13fe; --neon-green: #0cf3a8; --bg-dark: #020617; }
-        body { margin: 0; background: var(--bg-dark); color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        :root { --blue: #00f2ff; --green: #0cf3a8; --bg: #020617; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
         
-        /* Nebula Background */
-        .nebula {
-            position: fixed; inset: 0; z-index: -1;
-            background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #020617 70%);
-            overflow: hidden;
-        }
-        .star { position: absolute; background: white; border-radius: 50%; opacity: 0.5; animation: twinkle var(--d) infinite; }
-        @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        /* Không gian tinh vân động */
+        .nebula { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at center, #0a192f 0%, #020617 100%); }
+        
+        /* Thực thể năng lượng Orb (Vật thể hóa nhiệm vụ) */
+        .orb { width: 50px; height: 50px; position: absolute; cursor: pointer; transition: 0.5s; transform-style: preserve-3d; }
+        .orb-core { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(0,242,255,0.2); background: radial-gradient(circle, rgba(0,242,255,0.1) 0%, transparent 70%); animation: breathe 4s infinite ease-in-out; }
+        .completed .orb-core { border-color: var(--green); background: radial-gradient(circle, var(--green) 0%, transparent 70%); box-shadow: 0 0 30px var(--green); }
+        .active .orb-core { border-color: var(--blue); box-shadow: 0 0 20px var(--blue); }
+        .locked { opacity: 0.15; filter: blur(2px); cursor: not-allowed; }
 
-        /* Web3 Glassmorphism Node */
-        .node-web3 {
-            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .node-web3.active { border-color: var(--neon-blue); box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); }
-        .node-web3.completed { border-color: var(--neon-green); background: rgba(12, 243, 168, 0.05); box-shadow: 0 0 30px rgba(12, 243, 168, 0.2); }
-        .node-web3.locked { opacity: 0.2; filter: grayscale(1); cursor: not-allowed; }
+        @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.2); opacity: 0.8; } }
+        
+        /* Neural Flow Path */
+        .neural-svg { position: absolute; inset: 0; width: 100%; height: 8000px; pointer-events: none; z-index: 0; }
+        .flow-line { fill: none; stroke: var(--blue); stroke-width: 0.8; stroke-dasharray: 5, 15; animation: flow 20s linear infinite; opacity: 0.2; }
+        @keyframes flow { to { stroke-dashoffset: -300; } }
 
-        /* Neural Paths (SVG Lines) */
-        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-        .path-line { fill: none; stroke: rgba(0, 242, 255, 0.1); stroke-width: 1.5; transition: 1s; }
-        .path-line.active { stroke: var(--neon-blue); stroke-dasharray: 5; animation: flow 20s linear infinite; opacity: 0.6; }
-
-        @keyframes flow { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
-
-        /* Auth UI */
-        #auth-overlay {
-            position: fixed; inset: 0; z-index: 1000; background: rgba(2, 6, 23, 0.98);
-            display: flex; align-items: center; justify-content: center; backdrop-filter: blur(20px);
-        }
-        .numpad-dot { width: 12px; height: 12px; border: 1px solid var(--neon-blue); border-radius: 50%; transition: 0.3s; }
-        .numpad-dot.filled { background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); }
+        /* HUD & Auth */
+        .hud { background: rgba(0,0,0,0.7); backdrop-filter: blur(25px); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        #auth-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(2,6,23,0.98); display: none; align-items: center; justify-content: center; backdrop-filter: blur(30px); }
+        .dot { width: 14px; height: 14px; border: 2px solid var(--blue); border-radius: 50%; transition: 0.3s; }
+        .dot.active { background: var(--blue); box-shadow: 0 0 15px var(--blue); }
     </style>
 </head>
 <body>
 
-<div class="nebula" id="nebula-bg"></div>
-<svg id="svg-paths"></svg>
+<div class="nebula"></div>
+<svg class="neural-svg" id="neural-net"></svg>
 
-<div class="relative z-10 p-6 max-w-7xl mx-auto">
-    <header class="flex flex-col md:flex-row justify-between items-center mb-16 p-6 node-web3">
+<div class="relative z-10">
+    <header class="hud sticky top-0 p-6 flex justify-between items-center z-50">
         <div class="flex items-center gap-6">
-            <div class="p-3 bg-white rounded-xl">
-                <img src="logo-ditp.png" alt="DITP" class="w-20 h-auto" onerror="this.src='https://via.placeholder.com/80?text=DITP'">
-            </div>
+            <img src="logo-ditp.png" class="w-14 h-14" onerror="this.src='https://via.placeholder.com/56'">
             <div>
-                <h1 class="text-2xl font-black tracking-tighter uppercase italic text-white">Galaxy Command Hub</h1>
-                <div class="flex items-center gap-4 mt-1">
-                    <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">Pilot: Hiếu Nguyễn</span>
-                    <div class="w-32 bg-slate-900 h-1 rounded-full overflow-hidden">
-                        <div id="main-progress" class="h-full bg-cyan-400 transition-all duration-1000" style="width: 0%"></div>
-                    </div>
+                <h1 class="text-xl font-black italic tracking-tighter uppercase">DITP Galaxy Command</h1>
+                <div class="flex items-center gap-3 mt-1">
+                    <div class="w-32 h-1 bg-white/5 rounded-full overflow-hidden"><div id="p-bar" class="h-full bg-cyan-400 transition-all duration-1000" style="width: 0%"></div></div>
+                    <span id="p-text" class="text-[10px] text-cyan-400 font-bold">0%</span>
                 </div>
             </div>
         </div>
-        <div class="text-right mt-6 md:mt-0">
-            <div class="text-[10px] text-slate-500 uppercase font-bold mb-1">System Integrity</div>
-            <div class="text-5xl font-black text-white" id="integrity-val">0%</div>
-            <button onclick="openAuth()" id="auth-btn" class="mt-4 text-[9px] border border-cyan-500/30 px-6 py-2 rounded-full text-cyan-400 hover:bg-cyan-500/10 transition">
-                [ TRUY CẬP HỆ THỐNG ]
-            </button>
+        <div class="flex items-center gap-6 text-right">
+            <div id="sync-icon" class="text-[8px] text-slate-500 font-bold tracking-[0.3em] uppercase">Cloud Synced</div>
+            <button onclick="showAuth()" id="auth-trigger" class="text-[9px] border border-cyan-500/30 px-5 py-2 rounded-full text-cyan-400 hover:bg-cyan-500/10 transition">[ TRUY CẬP CHỈ HUY ]</button>
         </div>
     </header>
 
-    <main id="mission-grid" class="space-y-32 relative"></main>
+    <main id="star-map" class="relative w-full min-h-[8000px] px-10 pt-20"></main>
 </div>
 
-<div id="auth-overlay" style="display: none;">
-    <div class="text-center p-12 node-web3 border-cyan-500/50">
-        <h2 class="text-cyan-400 mb-8 uppercase tracking-[0.3em] text-sm">Xác nhận Chỉ huy</h2>
-        <div class="flex gap-4 justify-center mb-10" id="auth-dots">
-            <div class="numpad-dot"></div><div class="numpad-dot"></div><div class="numpad-dot"></div><div class="numpad-dot"></div>
+<div id="auth-overlay">
+    <div class="text-center">
+        <div class="flex gap-5 justify-center mb-10" id="auth-dots">
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
-        <p class="text-[10px] text-slate-500 animate-pulse italic">Dùng bàn phím để nhập mã truy cập...</p>
+        <p class="text-cyan-400 text-xs font-bold tracking-[0.5em] animate-pulse">NHẬP MÃ 1909 TỪ BÀN PHÍM</p>
     </div>
 </div>
 
 <script>
-    // --- 1. Tạo hiệu ứng sao nền ---
-    const nebula = document.getElementById('nebula-bg');
-    for(let i=0; i<150; i++) {
-        const star = document.createElement('div');
-        star.className = 'star';
-        star.style.left = Math.random()*100 + '%';
-        star.style.top = Math.random()*100 + '%';
-        const size = Math.random()*2 + 'px';
-        star.style.width = size; star.style.height = size;
-        star.style.setProperty('--d', (Math.random()*3 + 2) + 's');
-        nebula.appendChild(star);
-    }
+    // --- CẤU HÌNH SUPABASE ---
+    const DB_URL = 'https://txveokzzwizpgqcaacur.supabase.co';
+    const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4dmVva3p6d2l6cGdxY2FhY3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyOTkyNDIsImV4cCI6MjA4Nzg3NTI0Mn0.vhXbEasuPR5IyCfck9yPFpsMrcBwAxC36AuxF6GCl0w';
+    const supabase = supabaseJs.createClient(DB_URL, DB_KEY);
 
-    // --- 2. Dữ liệu 50 bước ---
-    const stages = ["I. KHỞI TẠO", "II. THAM MƯU", "III. XÂY DỰNG", "IV. HỆ SINH THÁI", "V. IPO"];
-    const titles = ["Chốt cổ đông", "Xác lập IP", "Tuyển Core 5", "Pháp nhân DITP", "MOU HTC", "Bản quyền 9.0", "VP R&D", "Hồ sơ Liên minh", "Ngân sách 12T", "Demo v1.0"];
-    
-    let steps = Array.from({length: 50}, (_, i) => ({
+    const titles = ["Chốt cổ đông", "Xác lập IP", "Tuyển Core 5", "Pháp nhân DITP", "MOU HTC", "Bản quyền 9.0", "VP R&D", "Hồ sơ Liên minh", "Ngân sách 12T", "Demo v1.0", "Pre-FS v1.6", "Tờ trình đầu tư", "Điều khoản ưu tiên", "Báo cáo C06", "Sandbox Scoring", "Dữ liệu sạch", "Ủng hộ Bộ", "Bảo mật C4", "Dashboard", "Phê duyệt", "Rà soát 15 Bộ", "Hợp nhất HC", "Hạ tầng DC", "VNeID thử", "API Dân cư", "An ninh mạng", "App Cán bộ", "Chạy điểm", "AI Tuning", "Nghiệm thu GĐ1", "Startup ngành", "Góp vốn IP", "BCC RAR", "Thuật toán TM", "Phí API", "MOU Ngân hàng", "Voucher An sinh", "VNeID Truyền thông", "Gọi vốn Startup", "1M Giao dịch", "Dòng tiền API", "Kiểm toán quốc tế", "Nâng cấp AI", "Phủ 15 nhóm", "Hội thảo Data", "Thoái vốn", "Lộ trình niêm yết", "Báo cáo ESG", "Nộp hồ sơ", "IPO"];
+
+    let missions = Array.from({length: 50}, (_, i) => ({
         id: i + 1,
-        stage: Math.ceil((i+1)/10),
-        title: i < 10 ? titles[i] : `Nhiệm vụ #${i+1}`,
-        completed: false,
-        docs: [],
-        journal: ""
+        title: titles[i] || `Nhiệm vụ ${i+1}`,
+        status: false,
+        x: (i % 2 === 0 ? 15 : 65) + Math.sin(i) * 8,
+        y: i * 160 + 100
     }));
 
-    // --- 3. Logic Persistence (LocalStorage) ---
-    function saveProgress() {
-        localStorage.setItem('DITP_SAVE_V9', JSON.stringify(steps));
-    }
-
-    function loadProgress() {
-        const saved = localStorage.getItem('DITP_SAVE_V9');
-        if(saved) {
-            const parsed = JSON.parse(saved);
-            steps.forEach((s, i) => {
-                if(parsed[i]) {
-                    s.completed = parsed[i].completed;
-                    s.journal = parsed[i].journal;
-                    s.docs = parsed[i].docs;
-                }
-            });
-        }
-    }
-
-    // --- 4. Quản trị & Bảo mật ---
     let isCommander = false;
     let pin = "";
-    const MASTER_KEY = "1234";
+    const MASTER_PIN = "1909";
 
-    function openAuth() { document.getElementById('auth-overlay').style.display = 'flex'; }
-    
+    // --- LOGIC ĐỒNG BỘ ---
+    async function syncData() {
+        const { data } = await supabase.from('missions').select('*');
+        if (data) {
+            data.forEach(row => {
+                const m = missions.find(x => x.id === row.id);
+                if (m) m.status = row.status;
+            });
+        }
+        render();
+    }
+
+    async function toggleTask(id) {
+        if (!isCommander) return;
+        const m = missions.find(x => x.id === id);
+        if (id > 1 && !missions[id-2].status && !m.status) return;
+
+        m.status = !m.status;
+        await supabase.from('missions').upsert({ id: id, status: m.status });
+        render();
+    }
+
+    // --- REAL-TIME LISTENER ---
+    supabase.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, () => syncData()).subscribe();
+
+    // --- AUTH ---
+    function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; }
     window.addEventListener('keydown', (e) => {
         if (document.getElementById('auth-overlay').style.display === 'flex') {
             if (e.key >= '0' && e.key <= '9') {
                 pin += e.key;
-                updateDots();
-                if (pin === MASTER_KEY) {
+                const dots = document.getElementById('auth-dots').children;
+                for(let i=0; i<4; i++) dots[i].className = pin.length > i ? 'dot active' : 'dot';
+                if (pin === MASTER_PIN) {
                     isCommander = true;
                     document.getElementById('auth-overlay').style.display = 'none';
-                    document.getElementById('auth-btn').innerText = "[ ĐÃ XÁC THỰC ]";
-                    document.getElementById('auth-btn').className = "mt-4 text-[9px] border border-green-500 px-6 py-2 rounded-full text-green-400";
-                    renderMap();
-                } else if (pin.length >= 4) { pin = ""; updateDots(); }
+                    document.getElementById('auth-trigger').innerText = "COMMANDER ACTIVE";
+                    document.getElementById('auth-trigger').classList.replace('text-cyan-400', 'text-green-400');
+                    render();
+                } else if (pin.length >= 4) { pin = ""; for(let i=0; i<4; i++) dots[i].className = 'dot'; }
             }
-            if (e.key === 'Escape') { document.getElementById('auth-overlay').style.display = 'none'; pin = ""; updateDots(); }
         }
     });
 
-    function updateDots() {
-        const dots = document.getElementById('auth-dots').children;
-        for(let i=0; i<4; i++) dots[i].className = pin.length > i ? 'numpad-dot filled' : 'numpad-dot';
-    }
+    // --- RENDER ---
+    function render() {
+        const map = document.getElementById('star-map');
+        const svg = document.getElementById('neural-net');
+        map.innerHTML = ''; svg.innerHTML = '';
 
-    // --- 5. Xử lý Nhiệm vụ ---
-    function handleTask(id) {
-        if(!isCommander) return;
-        const q = steps.find(s => s.id === id);
-        if(id > 1 && !steps[id-2].completed && !q.completed) return;
+        let done = missions.filter(m => m.status).length;
+        document.getElementById('p-text').innerText = Math.round((done/50)*100) + '%';
+        document.getElementById('p-bar').style.width = (done/50)*100 + '%';
 
-        if(!q.completed) {
-            const jour = prompt("Nhập nhật ký công việc:");
-            if(!jour) return;
-            const links = prompt("Dán các link tài liệu (cách nhau bằng dấu phẩy):");
-            q.journal = jour;
-            q.docs = links ? links.split(',').map(l => l.trim()) : [];
-            q.completed = true;
-        } else { q.completed = false; }
-        
-        saveProgress();
-        renderMap();
-    }
-
-    // --- 6. Render Giao diện & Neural Paths ---
-    function renderMap() {
-        const grid = document.getElementById('mission-grid');
-        grid.innerHTML = '';
-        
-        let done = steps.filter(s => s.completed).length;
-        let prg = Math.round((done / 50) * 100);
-        document.getElementById('main-progress').style.width = prg + '%';
-        document.getElementById('integrity-val').innerText = prg + '%';
-
-        stages.forEach((name, i) => {
-            const stgId = i + 1;
-            const stgSteps = steps.filter(s => s.stage === stgId);
-            const stageSection = document.createElement('div');
-            stageSection.innerHTML = `<h2 class="text-[10px] tracking-[0.8em] text-slate-500 mb-12 italic text-center uppercase opacity-50 underline">${name}</h2>`;
+        missions.forEach((m, i) => {
+            const avail = i === 0 || missions[i-1].status;
+            const state = m.status ? 'completed' : (avail ? 'active' : 'locked');
             
-            const cardGrid = document.createElement('div');
-            cardGrid.className = "grid grid-cols-2 lg:grid-cols-5 gap-8";
+            const el = document.createElement('div');
+            el.className = `orb ${state}`;
+            el.style.left = m.x + '%'; el.style.top = m.y + 'px';
+            el.onclick = () => toggleTask(m.id);
+            el.innerHTML = `<div class="orb-core"></div><div class="absolute -right-48 top-4 w-40 text-[9px] font-bold text-slate-500 uppercase tracking-widest">${m.title}</div>`;
+            map.appendChild(el);
 
-            stgSteps.forEach(q => {
-                const avail = q.id === 1 || steps[q.id-2].completed;
-                const status = q.completed ? 'completed' : (avail ? 'active' : 'locked');
-                cardGrid.innerHTML += `
-                    <div onclick="handleTask(${q.id})" id="node-${q.id}" class="node-web3 p-6 h-44 flex flex-col justify-between cursor-pointer ${status}">
-                        <div>
-                            <div class="text-[8px] opacity-40 mb-1">STATION ${q.id.toString().padStart(2,'0')}</div>
-                            <div class="text-[11px] font-bold uppercase tracking-wider">${q.title}</div>
-                        </div>
-                        <div class="flex flex-wrap gap-1.5 mt-2">
-                            ${q.docs.map((d, i) => `<a href="${d}" target="_blank" onclick="event.stopPropagation()" class="text-[7px] bg-cyan-950 border border-cyan-800 px-1.5 py-0.5 rounded text-cyan-400 hover:bg-cyan-400 hover:text-black">DATA ${i+1}</a>`).join('')}
-                        </div>
-                        <div class="text-[9px] italic text-slate-500 mt-2 truncate border-t border-slate-800 pt-2">${q.journal || 'Waiting...'}</div>
-                    </div>
-                `;
-            });
-            stageSection.appendChild(cardGrid);
-            grid.appendChild(stageSection);
+            if (i > 0) {
+                const prev = missions[i-1];
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                const d = `M ${prev.x+2}% ${prev.y+25} Q ${(prev.x+m.x)/2}% ${(prev.y+m.y)/2} ${m.x+2}% ${m.y+25}`;
+                path.setAttribute("d", d);
+                path.setAttribute("class", "flow-line");
+                if (prev.status) path.style.opacity = "0.7";
+                svg.appendChild(path);
+            }
         });
     }
 
-    loadProgress();
-    renderMap();
+    syncData();
 </script>
 </body>
 </html>
