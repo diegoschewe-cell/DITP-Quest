@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DITP | GALAXY COMMAND v18.2</title>
+    <title>DITP | GALAXY COMMAND v18.3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -12,7 +12,7 @@
         .nebula { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at 50% 50%, #0a192f 0%, #010409 100%); }
         .orb { width: 55px; height: 55px; position: absolute; cursor: pointer; transition: 0.5s; z-index: 10; }
         .orb-core { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(49,173,161,0.3); background: radial-gradient(circle, rgba(49,173,161,0.1) 0%, transparent 70%); animation: breathe 4s infinite; }
-        .completed .orb-core { border-color: var(--ditp-green); box-shadow: 0 0 30px var(--ditp-green); background: rgba(49,173, 161, 0.2); }
+        .completed .orb-core { border-color: var(--ditp-green); box-shadow: 0 0 30px var(--ditp-green); background: rgba(49, 173, 161, 0.2); }
         .active .orb-core { border-color: var(--ditp-orange); box-shadow: 0 0 15px var(--ditp-orange); }
         .mascot-emoji { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); font-size: 22px; animation: float 3s infinite; }
         @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.1); opacity: 0.8; } }
@@ -22,7 +22,6 @@
         @keyframes flow { to { stroke-dashoffset: -300; } }
         .hud { background: rgba(1, 4, 9, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(49, 173, 161, 0.2); }
         .key-btn { width: 55px; height: 55px; border: 1px solid rgba(49, 173, 161, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; color: var(--ditp-green); cursor: pointer; }
-        .key-btn:active { background: var(--ditp-green); color: #000; }
     </style>
 </head>
 <body>
@@ -33,10 +32,10 @@
         <div class="flex items-center gap-4">
             <img src="Logo-chia-se-trach-nhiem.png" class="w-10 h-10" onerror="this.src='https://via.placeholder.com/40'">
             <div>
-                <h1 class="text-[9px] font-black tracking-widest uppercase italic">DITP GALAXY HUB</h1>
+                <h1 class="text-[9px] font-black tracking-widest uppercase italic">DITP GALAXY COMMAND</h1>
                 <div class="flex items-center gap-2 mt-0.5">
                     <div class="w-20 bg-white/5 h-1 rounded-full overflow-hidden"><div id="p-bar" class="h-full bg-[#31ada1] transition-all duration-500"></div></div>
-                    <span id="sync-label" class="text-[8px] text-[#31ada1] font-bold uppercase tracking-tighter">Syncing...</span>
+                    <span id="sync-label" class="text-[8px] text-[#31ada1] font-bold uppercase tracking-tighter animate-pulse">Checking...</span>
                 </div>
             </div>
         </div>
@@ -74,20 +73,27 @@
     async function init() {
         render();
         try {
-            supabaseClient = supabase.createClient(URL, KEY);
-            await fetchCloud();
-            
-            // KÍCH HOẠT LẮNG NGHE REAL-TIME WEBSOCKET
-            supabaseClient
-                .channel('ditp-realtime')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, () => fetchCloud())
-                .subscribe();
-
-            document.getElementById('sync-label').innerText = "VŨ TRỤ ĐÃ KẾT NỐI";
-        } catch (e) { document.getElementById('sync-label').innerText = "MẤT KẾT NỐI"; }
+            // Sửa lỗi gọi thư viện quan trọng nhất ở đây
+            if (typeof window.supabase !== 'undefined') {
+                supabaseClient = window.supabase.createClient(URL, KEY);
+                await fetchCloud();
+                
+                // Đăng ký kênh đồng bộ thời gian thực
+                supabaseClient.channel('ditp-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, () => fetchCloud()).subscribe();
+                document.getElementById('sync-label').innerText = "VŨ TRỤ ĐÃ KẾT NỐI";
+                document.getElementById('sync-label').classList.remove('animate-pulse');
+            } else {
+                throw new Error("Library not loaded");
+            }
+        } catch (e) { 
+            document.getElementById('sync-label').innerText = "ĐANG TẢI DỮ LIỆU..."; 
+            // Thử lại sau 2 giây nếu thư viện chưa kịp tải
+            setTimeout(init, 2000);
+        }
     }
 
     async function fetchCloud() {
+        if (!supabaseClient) return;
         const { data } = await supabaseClient.from('missions').select('*').order('id', { ascending: true });
         if (data && data.length > 0) {
             data.forEach(row => {
@@ -104,17 +110,12 @@
         if (id > 1 && !missions[id-2].status && !m.status) return;
         
         const nextStatus = !m.status;
-        // Dùng RPC để ghi đè dữ liệu cấp độ hệ thống
-        const { error } = await supabaseClient.rpc('update_mission_status', { 
-            m_id: id, 
-            m_status: nextStatus 
-        });
+        m.status = nextStatus;
+        render();
 
-        if (!error) {
-            m.status = nextStatus;
-            render();
-        } else {
-            // Backup nếu RPC lỗi thì dùng update thường
+        if (supabaseClient) {
+            // Dùng song song cả RPC và Update để đảm bảo 100% lưu được
+            await supabaseClient.rpc('update_mission_status', { m_id: id, m_status: nextStatus });
             await supabaseClient.from('missions').update({ status: nextStatus }).eq('id', id);
         }
     }
@@ -147,7 +148,7 @@
         });
     }
 
-    function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; clearPin(); }
+    function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; pin = ""; updateDots(); }
     function closeAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
     function clearPin() { pin = ""; updateDots(); }
     function pressNum(n) {
@@ -157,7 +158,7 @@
             if (pin === "1909") {
                 isAdmin = true;
                 document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('auth-btn').innerText = "MASTER ACTIVE";
+                document.getElementById('auth-btn').innerText = "CHỈ HUY DITP";
                 render();
             } else if (pin.length === 4) setTimeout(clearPin, 300);
         }
