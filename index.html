@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>DITP | GALAXY COMMAND CENTER v7.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root { --p-blue: #00f2ff; --p-green: #0cf3a8; --p-gold: #ffcc33; }
+        body { margin: 0; background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+        #canvas-container { position: fixed; top: 0; left: 0; z-index: -1; }
+        
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(0, 242, 255, 0.2); border-radius: 15px; }
+        
+        /* Node & Neural Path */
+        .node { transition: 0.4s; cursor: pointer; position: relative; z-index: 10; }
+        .node.completed { border-color: var(--p-green); box-shadow: 0 0 25px rgba(12, 243, 168, 0.4); }
+        .node.active { border-color: var(--p-blue); box-shadow: 0 0 20px rgba(0, 242, 255, 0.4); }
+        .node.locked { opacity: 0.15; cursor: not-allowed; }
+
+        /* Numpad UI */
+        #auth-screen { position: fixed; inset: 0; z-index: 1000; background: rgba(2, 6, 23, 0.95); display: none; align-items: center; justify-content: center; }
+        .key-btn { width: 65px; height: 65px; border: 1px solid rgba(0, 242, 255, 0.3); display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 1.2rem; transition: 0.2s; color: var(--p-blue); }
+        .key-btn:hover { background: var(--p-blue); color: #000; }
+
+        /* Scanline effect */
+        .scanline { width: 100%; height: 2px; background: rgba(0, 242, 255, 0.1); position: absolute; animation: scan 4s linear infinite; }
+        @keyframes scan { from { top: 0; } to { top: 100%; } }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+    <div class="scanline"></div>
+
+    <div class="relative z-10 p-4 lg:p-10">
+        <div class="glass p-6 mb-16 flex flex-col md:flex-row justify-between items-center border-b-2 border-cyan-500/30">
+            <div class="flex items-center gap-5">
+                <div class="p-2 bg-white rounded-lg shadow-lg">
+                    <img src="logo-ditp.png" alt="DITP" class="w-16 h-auto" onerror="this.src='https://via.placeholder.com/60?text=DITP'">
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-tighter text-white uppercase italic">DITP Command Center</h1>
+                    <div class="flex gap-3 items-center mt-1">
+                        <span class="text-[10px] text-cyan-400 font-bold uppercase">Commander: Hiếu Nguyễn</span>
+                        <div class="h-1 w-24 bg-slate-800 rounded-full overflow-hidden">
+                            <div id="exp-bar" class="h-full bg-cyan-400 transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-right mt-4 md:mt-0">
+                <div class="text-[10px] text-slate-400 uppercase tracking-widest">Integrity Status</div>
+                <div class="text-4xl font-black text-white" id="stat-val">0%</div>
+                <button onclick="openGate()" id="gate-btn" class="mt-2 text-[9px] text-cyan-400 border border-cyan-500/50 px-4 py-1.5 rounded-full hover:bg-cyan-500/20 transition">
+                    [ GÕ PHÍM ĐỂ NHẬP MÃ ]
+                </button>
+            </div>
+        </div>
+
+        <div id="map-root" class="space-y-32 max-w-6xl mx-auto pb-40"></div>
+    </div>
+
+    <div id="auth-screen">
+        <div class="glass p-8 text-center border-cyan-500/50">
+            <h2 class="text-cyan-400 mb-6 uppercase text-sm tracking-widest">Xác thực Chỉ huy</h2>
+            <div id="dots" class="flex gap-3 justify-center mb-8">
+                <div class="w-3 h-3 rounded-full border border-cyan-500"></div>
+                <div class="w-3 h-3 rounded-full border border-cyan-500"></div>
+                <div class="w-3 h-3 rounded-full border border-cyan-500"></div>
+                <div class="w-3 h-3 rounded-full border border-cyan-500"></div>
+            </div>
+            <div class="grid grid-cols-3 gap-4 mb-4">
+                <script>
+                    [1,2,3,4,5,6,7,8,9,'CLR',0,'X'].forEach(k => {
+                        document.write(`<button onclick="pressKey('${k}')" class="key-btn font-bold">${k}</button>`);
+                    });
+                </script>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-4 italic">Hệ thống đang lắng nghe bàn phím...</p>
+        </div>
+    </div>
+
+    <script>
+        // --- 3D GALAXY (Three.js) ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsCount = 6000;
+        const positions = new Float32Array(starsCount * 3);
+        for(let i=0; i<starsCount*3; i++) positions[i] = (Math.random() - 0.5) * 1000;
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const starsMaterial = new THREE.PointsMaterial({ size: 0.8, color: 0x00f2ff, transparent: true, opacity: 0.6 });
+        const starField = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(starField);
+
+        camera.position.z = 150;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            starField.rotation.y += 0.0005;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // --- CORE LOGIC ---
+        let steps = Array.from({length: 50}, (_, i) => ({
+            id: i + 1,
+            stage: Math.ceil((i+1)/10),
+            title: i < 10 ? ["Chốt cổ đông", "Xác lập IP", "Tuyển Core 5", "Pháp nhân DITP", "MOU HTC", "Bản quyền 9.0", "VP R&D", "Hồ sơ Liên minh", "Ngân sách 12T", "Demo v1.0"][i] : `Nhiệm vụ #${i+1}`,
+            completed: false,
+            docs: [],
+            journal: ""
+        }));
+
+        const stageNames = ["I. KHỞI TẠO", "II. THAM MƯU", "III. XÂY DỰNG", "IV. HỆ SINH THÁI", "V. IPO"];
+        let isAuth = false;
+        let pinCode = "";
+        const MASTER_PIN = "1234";
+
+        function openGate() { document.getElementById('auth-screen').style.display = 'flex'; }
+        
+        // Keyboard Listener
+        window.addEventListener('keydown', (e) => {
+            if (document.getElementById('auth-screen').style.display === 'flex') {
+                if (e.key >= '0' && e.key <= '9') pressKey(e.key);
+                if (e.key === 'Backspace') pressKey('CLR');
+                if (e.key === 'Escape') pressKey('X');
+            }
+        });
+
+        function pressKey(k) {
+            if(k === 'X') { document.getElementById('auth-screen').style.display = 'none'; pinCode = ""; updateDots(); return; }
+            if(k === 'CLR') { pinCode = ""; updateDots(); return; }
+            pinCode += k;
+            updateDots();
+            if(pinCode === MASTER_PIN) {
+                isAuth = true;
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('gate-btn').innerText = "[ CHỈ HUY ĐÃ XÁC THỰC ]";
+                document.getElementById('gate-btn').classList.add('text-green-400', 'border-green-400');
+                renderUniverse();
+            } else if(pinCode.length >= 4) { pinCode = ""; updateDots(); }
+        }
+
+        function updateDots() {
+            const ds = document.getElementById('dots').children;
+            for(let i=0; i<4; i++) ds[i].style.background = pinCode.length > i ? '#00f2ff' : 'transparent';
+        }
+
+        function handleNode(id) {
+            if(!isAuth) return;
+            const q = steps.find(s => s.id === id);
+            if(id > 1 && !steps[id-2].completed && !q.completed) return;
+
+            if(!q.completed) {
+                const jour = prompt("Nhật ký (Kết quả định lượng):");
+                if(!jour) return;
+                const links = prompt("Dán các link tài liệu (cách nhau bằng dấu phẩy):");
+                q.journal = jour;
+                q.docs = links ? links.split(',').map(l => l.trim()) : [];
+                q.completed = true;
+            } else { q.completed = false; }
+            renderUniverse();
+        }
+
+        function renderUniverse() {
+            const root = document.getElementById('map-root');
+            root.innerHTML = '';
+
+            let done = steps.filter(s => s.completed).length;
+            let prg = Math.round((done / 50) * 100);
+            document.getElementById('exp-bar').style.width = prg + '%';
+            document.getElementById('stat-val').innerText = prg + '%';
+
+            stageNames.forEach((name, i) => {
+                const stageId = i + 1;
+                const stageSteps = steps.filter(s => s.stage === stageId);
+                
+                const stageDiv = document.createElement('div');
+                stageDiv.innerHTML = `<h2 class="text-[10px] tracking-[0.8em] text-slate-500 mb-8 italic text-center opacity-50 underline uppercase">${name}</h2>`;
+                
+                const grid = document.createElement('div');
+                grid.className = "grid grid-cols-2 lg:grid-cols-5 gap-6";
+
+                stageSteps.forEach(q => {
+                    const avail = q.id === 1 || steps[q.id-2].completed;
+                    const status = q.completed ? 'completed' : (avail ? 'active' : 'locked');
+                    
+                    grid.innerHTML += `
+                        <div onclick="handleNode(${q.id})" class="node glass p-5 min-h-[140px] flex flex-col justify-between ${status}">
+                            <div>
+                                <div class="text-[8px] opacity-40 mb-1">NODE ${q.id.toString().padStart(2,'0')}</div>
+                                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-200">${q.title}</div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap gap-1.5">
+                                ${q.docs.map((d, i) => `<a href="${d}" target="_blank" onclick="event.stopPropagation()" class="text-[8px] bg-cyan-950 border border-cyan-800 px-1.5 py-0.5 rounded text-cyan-400 hover:bg-cyan-400 hover:text-black transition">DATA ${i+1}</a>`).join('')}
+                            </div>
+                            <div class="text-[9px] italic text-slate-500 mt-2 truncate border-t border-slate-800 pt-2">${q.journal || 'Await...'}</div>
+                        </div>
+                    `;
+                });
+                stageDiv.appendChild(grid);
+                root.appendChild(stageDiv);
+            });
+        }
+        renderUniverse();
+    </script>
+</body>
+</html>
