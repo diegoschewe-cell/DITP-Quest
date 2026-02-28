@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DITP | GALAXY COMMAND v18.3</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>DITP | GALAXY HUB v20.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { --ditp-green: #31ada1; --ditp-orange: #f37d26; --bg: #010409; }
@@ -32,10 +31,10 @@
         <div class="flex items-center gap-4">
             <img src="Logo-chia-se-trach-nhiem.png" class="w-10 h-10" onerror="this.src='https://via.placeholder.com/40'">
             <div>
-                <h1 class="text-[9px] font-black tracking-widest uppercase italic">DITP GALAXY COMMAND</h1>
+                <h1 class="text-[9px] font-black tracking-widest uppercase italic">DITP GALAXY HUB</h1>
                 <div class="flex items-center gap-2 mt-0.5">
                     <div class="w-20 bg-white/5 h-1 rounded-full overflow-hidden"><div id="p-bar" class="h-full bg-[#31ada1] transition-all duration-500"></div></div>
-                    <span id="sync-label" class="text-[8px] text-[#31ada1] font-bold uppercase tracking-tighter animate-pulse">Checking...</span>
+                    <span id="sync-label" class="text-[8px] text-[#31ada1] font-bold uppercase tracking-tighter">Connecting to Sheets...</span>
                 </div>
             </div>
         </div>
@@ -59,48 +58,36 @@
 </div>
 
 <script>
-    const URL = 'https://txveokzzwizpgqcaacur.supabase.co';
-    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4dmVva3p6d2l6cGdxY2FhY3VyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjI5OTI0MiwiZXhwIjoyMDg3ODc1MjQyfQ.-fXd3NLKgQHEtvCX31e7WCkP7u8G5aTBpoifEePpvDk';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx05iotVqNi1yvApmFyAyGGxgoeVH2tvcD--oYFw1xzKA8KBC-zzFVWic3yNkiYLovmNQ/exec';
     
     const titles = ["Chốt cổ đông", "Xác lập IP", "Tuyển Core 5", "Pháp nhân DITP", "MOU HTC", "Bản quyền 9.0", "VP R&D", "Hồ sơ Liên minh", "Ngân sách 12T", "Demo v1.0", "Pre-FS v1.6", "Tờ trình đầu tư", "Điều khoản ưu tiên", "Báo cáo C06", "Sandbox Scoring", "Dữ liệu sạch", "Ủng hộ Bộ", "Bảo mật C4", "Dashboard", "Phê duyệt", "Rà soát 15 Bộ", "Hợp nhất HC", "Hạ tầng DC", "VNeID thử", "API Dân cư", "An ninh mạng", "App Cán bộ", "Chạy điểm", "AI Tuning", "Nghiệm thu GĐ1", "Startup ngành", "Góp vốn IP", "BCC RAR", "Thuật toán TM", "Phí API", "MOU Ngân hàng", "Voucher An sinh", "VNeID Truyền thông", "Gọi vốn Startup", "1M Giao dịch", "Dòng tiền API", "Kiểm toán quốc tế", "Nâng cấp AI", "Phủ 15 nhóm", "Hội thảo Data", "Thoái vốn", "Lộ trình niêm yết", "Báo cáo ESG", "Nộp hồ sơ", "IPO"];
     const emojis = ["🤖", "🐱", "🦆", "⚙️", "🤝", "📊", "🛡️", "📜", "💰", "🚀"];
     
     let missions = Array.from({length: 50}, (_, i) => ({ id: i + 1, title: titles[i], status: false, x: (i % 2 === 0 ? 12 : 55), y: i * 160 + 100 }));
-    let supabaseClient;
     let isAdmin = false;
     let pin = "";
 
     async function init() {
         render();
-        try {
-            // Sửa lỗi gọi thư viện quan trọng nhất ở đây
-            if (typeof window.supabase !== 'undefined') {
-                supabaseClient = window.supabase.createClient(URL, KEY);
-                await fetchCloud();
-                
-                // Đăng ký kênh đồng bộ thời gian thực
-                supabaseClient.channel('ditp-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'missions' }, () => fetchCloud()).subscribe();
-                document.getElementById('sync-label').innerText = "VŨ TRỤ ĐÃ KẾT NỐI";
-                document.getElementById('sync-label').classList.remove('animate-pulse');
-            } else {
-                throw new Error("Library not loaded");
-            }
-        } catch (e) { 
-            document.getElementById('sync-label').innerText = "ĐANG TẢI DỮ LIỆU..."; 
-            // Thử lại sau 2 giây nếu thư viện chưa kịp tải
-            setTimeout(init, 2000);
-        }
+        await fetchFromSheets();
+        // Tự động cập nhật dữ liệu từ Sheets mỗi 3 giây
+        setInterval(fetchFromSheets, 3000);
     }
 
-    async function fetchCloud() {
-        if (!supabaseClient) return;
-        const { data } = await supabaseClient.from('missions').select('*').order('id', { ascending: true });
-        if (data && data.length > 0) {
-            data.forEach(row => {
-                const m = missions.find(x => x.id === row.id);
-                if (m) m.status = row.status;
-            });
-            render();
+    async function fetchFromSheets() {
+        try {
+            const response = await fetch(SCRIPT_URL);
+            const data = await response.json();
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    const m = missions.find(x => x.id === item.id);
+                    if (m) m.status = (item.status === true || item.status === "TRUE");
+                });
+                render();
+                document.getElementById('sync-label').innerText = "LIVE SYNC ACTIVE";
+            }
+        } catch (e) {
+            document.getElementById('sync-label').innerText = "OFFLINE - RECONNECTING...";
         }
     }
 
@@ -110,14 +97,19 @@
         if (id > 1 && !missions[id-2].status && !m.status) return;
         
         const nextStatus = !m.status;
-        m.status = nextStatus;
+        m.status = nextStatus; // Hiển thị ngay lập tức
         render();
 
-        if (supabaseClient) {
-            // Dùng song song cả RPC và Update để đảm bảo 100% lưu được
-            await supabaseClient.rpc('update_mission_status', { m_id: id, m_status: nextStatus });
-            await supabaseClient.from('missions').update({ status: nextStatus }).eq('id', id);
-        }
+        // Gửi lệnh lưu vào Google Sheets
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                cache: 'no-cache',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, status: nextStatus })
+            });
+        } catch (e) { console.error("Lưu Sheets thất bại"); }
     }
 
     function render() {
@@ -148,7 +140,7 @@
         });
     }
 
-    function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; pin = ""; updateDots(); }
+    function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; clearPin(); }
     function closeAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
     function clearPin() { pin = ""; updateDots(); }
     function pressNum(n) {
