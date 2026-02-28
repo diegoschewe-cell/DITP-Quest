@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>DITP | GALAXY COMMAND v15.2</title>
+    <title>DITP | GALAXY COMMAND v15.3</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -10,19 +10,16 @@
         body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
         .nebula { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #020617 80%); }
         
-        /* Thực thể Orb năng lượng Web3 */
         .orb { width: 65px; height: 65px; position: absolute; cursor: pointer; transition: 0.5s; z-index: 10; }
         .orb-core { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(49, 173, 161, 0.3); background: radial-gradient(circle, rgba(49, 173, 161, 0.1) 0%, transparent 70%); animation: breathe 4s infinite ease-in-out; }
         .completed .orb-core { border-color: var(--ditp-green); box-shadow: 0 0 35px var(--ditp-green); background: rgba(49, 173, 161, 0.2); }
         .active .orb-core { border-color: var(--ditp-orange); box-shadow: 0 0 20px var(--ditp-orange); }
         .locked { opacity: 0.15; filter: grayscale(1); cursor: not-allowed; }
 
-        /* Linh vật Mascot chuyển động */
         .mascot { position: absolute; top: -45px; left: 50%; transform: translateX(-50%); font-size: 26px; animation: float 3s infinite ease-in-out; }
         @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.15); opacity: 0.8; } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-        /* Neural Path nối các trạm */
         .neural-svg { position: absolute; inset: 0; width: 100%; height: 8500px; pointer-events: none; z-index: 1; }
         .flow-line { fill: none; stroke: var(--ditp-green); stroke-width: 0.8; stroke-dasharray: 5, 15; animation: flow 20s linear infinite; opacity: 0.1; }
         @keyframes flow { to { stroke-dashoffset: -300; } }
@@ -40,16 +37,16 @@
         <div class="flex items-center gap-4">
             <img src="Logo-chia-se-trach-nhiem.png" class="w-12 h-12" onerror="this.src='https://via.placeholder.com/48'">
             <div>
-                <h1 class="text-xs font-black tracking-[0.2em] uppercase italic">DITP GALAXY COMMAND HUB</h1>
+                <h1 class="text-xs font-black tracking-[0.2em] uppercase italic">DITP GALAXY HUB v15.3</h1>
                 <div class="flex items-center gap-2 mt-1">
                     <div class="w-24 bg-white/5 h-1 rounded-full overflow-hidden"><div id="p-bar" class="h-full bg-[#31ada1]" style="width: 0%"></div></div>
-                    <span id="p-text" class="text-[9px] text-[#31ada1] font-bold uppercase">Ready</span>
+                    <span id="p-text" class="text-[9px] text-[#31ada1] font-bold uppercase tracking-widest">Syncing</span>
                 </div>
             </div>
         </div>
-        <div class="flex items-center gap-4 text-right">
-            <span id="sync-status" class="text-[8px] text-slate-500 font-bold uppercase tracking-widest italic">Syncing...</span>
-            <button onclick="showAuth()" id="auth-btn" class="text-[9px] border border-[#31ada1]/30 px-5 py-2 rounded-full text-[#31ada1] hover:bg-[#31ada1]/10 uppercase transition">Quản trị (1909)</button>
+        <div class="flex items-center gap-4">
+            <span id="sync-status" class="text-[8px] text-slate-500 font-bold uppercase tracking-widest italic">Checking Cloud...</span>
+            <button onclick="showAuth()" id="auth-btn" class="text-[9px] border border-[#31ada1]/30 px-5 py-2 rounded-full text-[#31ada1] hover:bg-[#31ada1]/10 transition uppercase">Master Key</button>
         </div>
     </header>
 
@@ -59,7 +56,8 @@
 <script>
     const URL = 'https://txveokzzwizpgqcaacur.supabase.co';
     const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4dmVva3p6d2l6cGdxY2FhY3VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyOTkyNDIsImV4cCI6MjA4Nzg3NTI0Mn0.vhXbEasuPR5IyCfck9yPFpsMrcBwAxC36AuxF6GCl0w';
-    
+    const supabaseClient = supabase.createClient(URL, KEY);
+
     const titles = ["Chốt cổ đông", "Xác lập IP", "Tuyển Core 5", "Pháp nhân DITP", "MOU HTC", "Bản quyền 9.0", "VP R&D", "Hồ sơ Liên minh", "Ngân sách 12T", "Demo v1.0", "Pre-FS v1.6", "Tờ trình đầu tư", "Điều khoản ưu tiên", "Báo cáo C06", "Sandbox Scoring", "Dữ liệu sạch", "Ủng hộ Bộ", "Bảo mật C4", "Dashboard", "Phê duyệt", "Rà soát 15 Bộ", "Hợp nhất HC", "Hạ tầng DC", "VNeID thử", "API Dân cư", "An ninh mạng", "App Cán bộ", "Chạy điểm", "AI Tuning", "Nghiệm thu GĐ1", "Startup ngành", "Góp vốn IP", "BCC RAR", "Thuật toán TM", "Phí API", "MOU Ngân hàng", "Voucher An sinh", "VNeID Truyền thông", "Gọi vốn Startup", "1M Giao dịch", "Dòng tiền API", "Kiểm toán quốc tế", "Nâng cấp AI", "Phủ 15 nhóm", "Hội thảo Data", "Thoái vốn", "Lộ trình niêm yết", "Báo cáo ESG", "Nộp hồ sơ", "IPO"];
     const emojis = ["🤖", "🐱", "🦆", "⚙️", "🤝", "📊", "🛡️", "📜", "💰", "🚀"];
 
@@ -69,30 +67,34 @@
         y: i * 165 + 100
     }));
 
-    let supabaseClient;
     let isAdmin = false;
 
     async function init() {
-        // Load LocalStorage trước
-        const local = localStorage.getItem('DITP_SAVE');
-        if (local) {
-            const parsed = JSON.parse(local);
-            missions.forEach((m, i) => { if(parsed[i]) m.status = parsed[i].status; });
-        }
-        render();
+        render(); // Vẽ khung trước
+        await fetchCloudData();
+        
+        // Lắng nghe thay đổi Real-time
+        supabaseClient
+            .channel('public:missions')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'missions' }, payload => {
+                const m = missions.find(x => x.id === payload.new.id);
+                if (m) { m.status = payload.new.status; render(); }
+            })
+            .subscribe();
+    }
 
-        try {
-            supabaseClient = supabase.createClient(URL, KEY);
-            const { data } = await supabaseClient.from('missions').select('*');
-            if (data && data.length > 0) {
-                data.forEach(row => {
-                    const m = missions.find(x => x.id === row.id);
-                    if (m) m.status = row.status;
-                });
-                document.getElementById('sync-status').innerText = "Cloud Connected";
-                render();
-            }
-        } catch (e) { document.getElementById('sync-status').innerText = "Cloud Error"; }
+    async function fetchCloudData() {
+        const { data, error } = await supabaseClient.from('missions').select('*').order('id', { ascending: true });
+        if (data && data.length > 0) {
+            data.forEach(row => {
+                const m = missions.find(x => x.id === row.id);
+                if (m) m.status = row.status;
+            });
+            document.getElementById('sync-status').innerText = "Cloud: Synchronized";
+            render();
+        } else {
+            document.getElementById('sync-status').innerText = "Cloud: Empty (Run SQL Script)";
+        }
     }
 
     async function toggleTask(id) {
@@ -103,10 +105,12 @@
         m.status = !m.status;
         render();
 
-        localStorage.setItem('DITP_SAVE', JSON.stringify(missions));
-        if (supabaseClient) {
-            await supabaseClient.from('missions').upsert({ id: id, status: m.status });
-        }
+        const { error } = await supabaseClient
+            .from('missions')
+            .update({ status: m.status })
+            .eq('id', id);
+            
+        if (error) alert("Lỗi ghi dữ liệu: " + error.message);
     }
 
     function render() {
@@ -150,7 +154,7 @@
         const p = prompt("Nhập mã Chỉ huy (1909):");
         if(p === "1909") {
             isAdmin = true;
-            document.getElementById('auth-btn').innerText = "MASTER KEY ACTIVE";
+            document.getElementById('auth-btn').innerText = "MASTER ACTIVE";
             render();
         }
     }
