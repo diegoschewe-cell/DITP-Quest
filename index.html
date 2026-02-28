@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DITP | GALAXY HUB v20.0</title>
+    <title>DITP | GALAXY HUB v20.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { --ditp-green: #31ada1; --ditp-orange: #f37d26; --bg: #010409; }
@@ -21,20 +21,25 @@
         @keyframes flow { to { stroke-dashoffset: -300; } }
         .hud { background: rgba(1, 4, 9, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(49, 173, 161, 0.2); }
         .key-btn { width: 55px; height: 55px; border: 1px solid rgba(49, 173, 161, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; color: var(--ditp-green); cursor: pointer; }
+        
+        /* Tooltip nhiệm vụ */
+        .mission-info { display: none; position: absolute; top: 60px; left: 50%; transform: translateX(-50%); width: 200px; background: rgba(1, 4, 9, 0.9); border: 1px solid var(--ditp-green); padding: 10px; border-radius: 8px; font-size: 10px; z-index: 100; backdrop-filter: blur(10px); }
+        .orb:hover .mission-info { display: block; }
     </style>
 </head>
 <body>
 <div class="nebula"></div>
 <svg class="neural-svg" id="neural-net"></svg>
+
 <div class="relative z-10">
     <header class="hud sticky top-0 p-4 flex justify-between items-center z-50">
         <div class="flex items-center gap-4">
-            <img src="Logo-chia-se-trach-nhiem.png" class="w-10 h-10" onerror="this.src='https://via.placeholder.com/40'">
+            <img src="Logo-chia-se-trach-nhiem.png" class="w-10 h-10 object-contain" onerror="this.src='https://via.placeholder.com/40?text=DITP'">
             <div>
-                <h1 class="text-[9px] font-black tracking-widest uppercase italic">DITP GALAXY HUB</h1>
+                <h1 class="text-[9px] font-black tracking-widest uppercase italic text-[#31ada1]">DITP GALAXY HUB</h1>
                 <div class="flex items-center gap-2 mt-0.5">
                     <div class="w-20 bg-white/5 h-1 rounded-full overflow-hidden"><div id="p-bar" class="h-full bg-[#31ada1] transition-all duration-500"></div></div>
-                    <span id="sync-label" class="text-[8px] text-[#31ada1] font-bold uppercase tracking-tighter">Connecting to Sheets...</span>
+                    <span id="sync-label" class="text-[8px] text-[#31ada1] font-bold uppercase italic">Syncing Excel...</span>
                 </div>
             </div>
         </div>
@@ -63,15 +68,26 @@
     const titles = ["Chốt cổ đông", "Xác lập IP", "Tuyển Core 5", "Pháp nhân DITP", "MOU HTC", "Bản quyền 9.0", "VP R&D", "Hồ sơ Liên minh", "Ngân sách 12T", "Demo v1.0", "Pre-FS v1.6", "Tờ trình đầu tư", "Điều khoản ưu tiên", "Báo cáo C06", "Sandbox Scoring", "Dữ liệu sạch", "Ủng hộ Bộ", "Bảo mật C4", "Dashboard", "Phê duyệt", "Rà soát 15 Bộ", "Hợp nhất HC", "Hạ tầng DC", "VNeID thử", "API Dân cư", "An ninh mạng", "App Cán bộ", "Chạy điểm", "AI Tuning", "Nghiệm thu GĐ1", "Startup ngành", "Góp vốn IP", "BCC RAR", "Thuật toán TM", "Phí API", "MOU Ngân hàng", "Voucher An sinh", "VNeID Truyền thông", "Gọi vốn Startup", "1M Giao dịch", "Dòng tiền API", "Kiểm toán quốc tế", "Nâng cấp AI", "Phủ 15 nhóm", "Hội thảo Data", "Thoái vốn", "Lộ trình niêm yết", "Báo cáo ESG", "Nộp hồ sơ", "IPO"];
     const emojis = ["🤖", "🐱", "🦆", "⚙️", "🤝", "📊", "🛡️", "📜", "💰", "🚀"];
     
-    let missions = Array.from({length: 50}, (_, i) => ({ id: i + 1, title: titles[i], status: false, x: (i % 2 === 0 ? 12 : 55), y: i * 160 + 100 }));
+    let missions = Array.from({length: 50}, (_, i) => ({ 
+        id: i + 1, title: titles[i], status: false, note: "", doc: "",
+        x: (i % 2 === 0 ? 12 : 55), y: i * 160 + 100 
+    }));
     let isAdmin = false;
     let pin = "";
 
     async function init() {
         render();
         await fetchFromSheets();
-        // Tự động cập nhật dữ liệu từ Sheets mỗi 3 giây
-        setInterval(fetchFromSheets, 3000);
+        setInterval(fetchFromSheets, 4000);
+        
+        // HỖ TRỢ BÀN PHÍM VẬT LÝ
+        window.addEventListener('keydown', (e) => {
+            if (document.getElementById('auth-overlay').style.display === 'flex') {
+                if (e.key >= '0' && e.key <= '9') pressNum(e.key);
+                if (e.key === 'Backspace') clearPin();
+                if (e.key === 'Escape') closeAuth();
+            }
+        });
     }
 
     async function fetchFromSheets() {
@@ -79,16 +95,19 @@
             const response = await fetch(SCRIPT_URL);
             const data = await response.json();
             if (data && data.length > 0) {
-                data.forEach(item => {
-                    const m = missions.find(x => x.id === item.id);
-                    if (m) m.status = (item.status === true || item.status === "TRUE");
+                data.forEach((item, i) => {
+                    const m = missions[i];
+                    if (m) {
+                        m.status = (item.status === true || item.status === "TRUE");
+                        // Cập nhật Nhận xét và Link từ Cột D, E (nếu anh có trong JSON)
+                        m.note = item.note || "No comments";
+                        m.doc = item.doc || "#";
+                    }
                 });
                 render();
-                document.getElementById('sync-label').innerText = "LIVE SYNC ACTIVE";
+                document.getElementById('sync-label').innerText = "VŨ TRỤ ĐÃ KẾT NỐI";
             }
-        } catch (e) {
-            document.getElementById('sync-label').innerText = "OFFLINE - RECONNECTING...";
-        }
+        } catch (e) { document.getElementById('sync-label').innerText = "DỰ PHÒNG ACTIVE"; }
     }
 
     async function toggleTask(id) {
@@ -97,19 +116,16 @@
         if (id > 1 && !missions[id-2].status && !m.status) return;
         
         const nextStatus = !m.status;
-        m.status = nextStatus; // Hiển thị ngay lập tức
+        m.status = nextStatus;
         render();
 
-        // Gửi lệnh lưu vào Google Sheets
         try {
             await fetch(SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                cache: 'no-cache',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: id, status: nextStatus })
             });
-        } catch (e) { console.error("Lưu Sheets thất bại"); }
+        } catch (e) { console.error("Sync failed"); }
     }
 
     function render() {
@@ -127,7 +143,16 @@
             el.className = `orb ${state}`;
             el.style.left = m.x + '%'; el.style.top = m.y + 'px';
             el.onclick = () => toggleTask(m.id);
-            el.innerHTML = `${m.status ? `<div class="mascot-emoji">${emojis[i % emojis.length]}</div>` : ''}<div class="orb-core"></div><div class="absolute -right-32 top-5 w-28 text-[7px] font-bold text-slate-500 uppercase leading-tight">${m.title}</div>`;
+            el.innerHTML = `
+                ${m.status ? `<div class="mascot-emoji">${emojis[i % emojis.length]}</div>` : ''}
+                <div class="orb-core"></div>
+                <div class="absolute -right-32 top-5 w-28 text-[7px] font-bold text-slate-500 uppercase leading-tight">${m.title}</div>
+                <div class="mission-info">
+                    <p class="text-white font-bold mb-1">${m.title}</p>
+                    <p class="text-slate-400 mb-2 italic">${m.note}</p>
+                    ${m.doc !== "#" ? `<a href="${m.doc}" target="_blank" class="text-[#31ada1] underline">Xem tài liệu</a>` : ""}
+                </div>
+            `;
             map.appendChild(el);
             if (i > 0) {
                 const prev = missions[i-1];
@@ -150,7 +175,7 @@
             if (pin === "1909") {
                 isAdmin = true;
                 document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('auth-btn').innerText = "CHỈ HUY DITP";
+                document.getElementById('auth-btn').innerText = "CHỈ HUY ACTIVE";
                 render();
             } else if (pin.length === 4) setTimeout(clearPin, 300);
         }
