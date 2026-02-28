@@ -3,44 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DITP | GALAXY HUB v16.4</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
+    <title>DITP | GALAXY HUB v17.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { --ditp-green: #31ada1; --ditp-orange: #f37d26; --bg: #010409; }
         body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; touch-action: pan-y; }
         .nebula { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at 50% 50%, #0a192f 0%, #010409 100%); }
+        
         .orb { width: 55px; height: 55px; position: absolute; cursor: pointer; transition: 0.5s; z-index: 10; }
-        .orb-core { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(49, 173, 161, 0.3); background: radial-gradient(circle, rgba(49, 173, 161, 0.1) 0%, transparent 70%); animation: breathe 4s infinite; }
+        .orb-core { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(49, 173, 161, 0.3); background: radial-gradient(circle, rgba(49, 173, 161, 0.1) 0%, transparent 70%); animation: breathe 4s infinite ease-in-out; }
         .completed .orb-core { border-color: var(--ditp-green); box-shadow: 0 0 30px var(--ditp-green); background: rgba(49, 173, 161, 0.2); }
         .active .orb-core { border-color: var(--ditp-orange); box-shadow: 0 0 15px var(--ditp-orange); }
         .mascot-emoji { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); font-size: 22px; animation: float 3s infinite; }
+        
         @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.1); opacity: 0.8; } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        
         .neural-svg { position: absolute; inset: 0; width: 100%; height: 8500px; pointer-events: none; z-index: 1; }
         .flow-line { fill: none; stroke: var(--ditp-green); stroke-width: 0.7; stroke-dasharray: 5, 15; animation: flow 20s linear infinite; opacity: 0.15; }
         @keyframes flow { to { stroke-dashoffset: -300; } }
+        
         .hud { background: rgba(1, 4, 9, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(49, 173, 161, 0.2); }
-        .key-btn { width: 60px; height: 60px; border: 1px solid rgba(49, 173, 161, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; color: var(--ditp-green); }
+        .key-btn { width: 60px; height: 60px; border: 1px solid rgba(49, 173, 161, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; color: var(--ditp-green); cursor: pointer; }
         .key-btn:active { background: var(--ditp-green); color: #000; }
     </style>
 </head>
 <body>
 <div class="nebula"></div>
 <svg class="neural-svg" id="neural-net"></svg>
+
 <div class="relative z-10">
     <header class="hud sticky top-0 p-4 flex justify-between items-center z-50">
         <div class="flex items-center gap-4">
             <img src="Logo-chia-se-trach-nhiem.png" class="w-10 h-10" onerror="this.src='https://via.placeholder.com/40'">
             <div>
-                <h1 class="text-[9px] font-black tracking-widest uppercase italic">DITP GALAXY HUB v16.4</h1>
+                <h1 class="text-[9px] font-black tracking-widest uppercase italic">DITP GALAXY v17.0</h1>
                 <div class="flex items-center gap-2 mt-0.5">
                     <div class="w-20 bg-white/5 h-1 rounded-full overflow-hidden"><div id="p-bar" class="h-full bg-[#31ada1] transition-all duration-500"></div></div>
-                    <span id="p-text" class="text-[8px] text-[#31ada1] font-bold uppercase">CONNECTED</span>
+                    <span id="sync-label" class="text-[8px] text-[#31ada1] font-bold uppercase tracking-tighter">Syncing...</span>
                 </div>
             </div>
         </div>
-        <button onclick="showAuth()" id="auth-btn" class="text-[8px] border border-[#31ada1]/40 px-4 py-1.5 rounded-full text-[#31ada1] uppercase">Commander</button>
+        <button onclick="showAuth()" id="auth-btn" class="text-[8px] border border-[#31ada1]/40 px-4 py-1.5 rounded-full text-[#31ada1] uppercase">Admin</button>
     </header>
     <main id="star-map" class="relative w-full min-h-[8500px] pt-16 px-6"></main>
 </div>
@@ -65,31 +70,31 @@
     
     const titles = ["Chốt cổ đông", "Xác lập IP", "Tuyển Core 5", "Pháp nhân DITP", "MOU HTC", "Bản quyền 9.0", "VP R&D", "Hồ sơ Liên minh", "Ngân sách 12T", "Demo v1.0", "Pre-FS v1.6", "Tờ trình đầu tư", "Điều khoản ưu tiên", "Báo cáo C06", "Sandbox Scoring", "Dữ liệu sạch", "Ủng hộ Bộ", "Bảo mật C4", "Dashboard", "Phê duyệt", "Rà soát 15 Bộ", "Hợp nhất HC", "Hạ tầng DC", "VNeID thử", "API Dân cư", "An ninh mạng", "App Cán bộ", "Chạy điểm", "AI Tuning", "Nghiệm thu GĐ1", "Startup ngành", "Góp vốn IP", "BCC RAR", "Thuật toán TM", "Phí API", "MOU Ngân hàng", "Voucher An sinh", "VNeID Truyền thông", "Gọi vốn Startup", "1M Giao dịch", "Dòng tiền API", "Kiểm toán quốc tế", "Nâng cấp AI", "Phủ 15 nhóm", "Hội thảo Data", "Thoái vốn", "Lộ trình niêm yết", "Báo cáo ESG", "Nộp hồ sơ", "IPO"];
     const emojis = ["🤖", "🐱", "🦆", "⚙️", "🤝", "📊", "🛡️", "📜", "💰", "🚀"];
-
+    
     let missions = Array.from({length: 50}, (_, i) => ({ id: i + 1, title: titles[i], status: false, x: (i % 2 === 0 ? 12 : 55), y: i * 160 + 100 }));
     let supabaseClient;
     let isAdmin = false;
     let pin = "";
 
-    function init() {
-        if (window.supabase) {
-            supabaseClient = window.supabase.createClient(URL, KEY);
-            fetchCloud();
-            // Lắng nghe Real-time cực nhạy
-            supabaseClient.channel('public:missions').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'missions' }, payload => {
-                const m = missions.find(x => x.id === payload.new.id);
-                if (m) { m.status = payload.new.status; render(); }
-            }).subscribe();
-        }
+    async function init() {
+        render();
+        try {
+            supabaseClient = supabase.createClient(URL, KEY);
+            // Kéo dữ liệu 
+            await fetchCloud();
+            // Thiết lập đồng bộ mỗi 3 giây
+            setInterval(fetchCloud, 3000);
+        } catch (e) { document.getElementById('sync-label').innerText = "OFFLINE"; }
     }
 
     async function fetchCloud() {
-        const { data, error } = await supabaseClient.from('missions').select('*').order('id', { ascending: true });
-        if (data) {
+        const { data } = await supabaseClient.from('missions').select('*').order('id', { ascending: true });
+        if (data && data.length > 0) {
             data.forEach(row => {
                 const m = missions.find(x => x.id === row.id);
                 if (m) m.status = row.status;
             });
+            document.getElementById('sync-label').innerText = "LIVE GALAXY";
             render();
         }
     }
@@ -99,15 +104,19 @@
         const m = missions.find(x => x.id === id);
         if (id > 1 && !missions[id-2].status && !m.status) return;
         
-        const newStatus = !m.status;
-        // Gửi lệnh lên Cloud TRƯỚC khi thay đổi giao diện để đảm bảo lưu thành công
-        const { error } = await supabaseClient.from('missions').upsert({ id: id, status: newStatus });
+        const nextStatus = !m.status;
         
+        // DÙNG RPC ĐỂ ÉP CLOUD GHI ĐÈ NGAY LẬP TỨC
+        const { error } = await supabaseClient.rpc('update_mission_status', { 
+            m_id: id, 
+            m_status: nextStatus 
+        });
+
         if (!error) {
-            m.status = newStatus;
+            m.status = nextStatus;
             render();
         } else {
-            alert("Lỗi kết nối Cloud. Vui lòng thử lại.");
+            alert("Lỗi kết nối. Hãy đảm bảo đã chạy SQL Script trên Supabase!");
         }
     }
 
@@ -118,6 +127,7 @@
         map.innerHTML = ''; svg.innerHTML = '';
         let done = missions.filter(m => m.status).length;
         document.getElementById('p-bar').style.width = (done/50)*100 + '%';
+        
         missions.forEach((m, i) => {
             const avail = i === 0 || missions[i-1].status;
             const state = m.status ? 'completed' : (avail ? 'active' : 'locked');
