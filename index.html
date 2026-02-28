@@ -3,38 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DITP | GALAXY HUB v20.1</title>
+    <title>DITP | GALAXY HUB v21.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --ditp-green: #31ada1; --ditp-orange: #f37d26; --bg: #010409; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; touch-action: pan-y; }
-        .nebula { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at 50% 50%, #0a192f 0%, #010409 100%); }
-        .orb { width: 55px; height: 55px; position: absolute; cursor: pointer; transition: 0.5s; z-index: 10; }
-        .orb-core { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(49,173,161,0.3); background: radial-gradient(circle, rgba(49,173,161,0.1) 0%, transparent 70%); animation: breathe 4s infinite; }
-        .completed .orb-core { border-color: var(--ditp-green); box-shadow: 0 0 30px var(--ditp-green); background: rgba(49, 173, 161, 0.2); }
-        .active .orb-core { border-color: var(--ditp-orange); box-shadow: 0 0 15px var(--ditp-orange); }
-        .mascot-emoji { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); font-size: 22px; animation: float 3s infinite; }
-        @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.1); opacity: 0.8; } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .neural-svg { position: absolute; inset: 0; width: 100%; height: 8500px; pointer-events: none; z-index: 1; }
-        .flow-line { fill: none; stroke: var(--ditp-green); stroke-width: 0.7; stroke-dasharray: 5, 15; animation: flow 20s linear infinite; opacity: 0.15; }
-        @keyframes flow { to { stroke-dashoffset: -300; } }
-        .hud { background: rgba(1, 4, 9, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(49, 173, 161, 0.2); }
-        .key-btn { width: 55px; height: 55px; border: 1px solid rgba(49, 173, 161, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; color: var(--ditp-green); cursor: pointer; }
-        
+        :root { 
+            --ditp-green: #31ada1; 
+            --ditp-orange: #f37d26; 
+            --bg: #010409; 
+            --neon-blue: #0ff; /* Cyan */
+            --neon-green: #0f0; /* Lime green */
+        }
+        body { 
+            margin: 0; 
+            background: var(--bg); 
+            color: #fff; 
+            font-family: 'Segoe UI', sans-serif; 
+            overflow: hidden; /* Prevent scrollbars with 3D */
+            perspective: 1000px; /* For 3D effect */
+        }
+        .galaxy-background {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background: 
+                radial-gradient(circle at 50% 50%, #0a192f 0%, #010409 100%),
+                url('https://www.transparenttextures.com/patterns/dark-matter.png'); /* Subtle texture */
+            background-size: cover;
+            animation: zoomOut 20s infinite alternate; /* Gentle zoom effect */
+        }
+        @keyframes zoomOut {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+
+        .hud { 
+            background: rgba(1, 4, 9, 0.95); 
+            backdrop-filter: blur(20px); 
+            border-bottom: 1px solid rgba(49, 173, 161, 0.2); 
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
+        }
+
+        #star-map {
+            position: relative;
+            width: 100%;
+            height: 100vh; /* Full viewport height */
+            display: flex;
+            flex-wrap: wrap; /* Arrange items */
+            justify-content: center;
+            align-items: center;
+            gap: 40px; /* Spacing between cubes */
+            overflow-y: auto; /* Enable scroll for many cubes */
+            padding: 80px 20px;
+            box-sizing: border-box;
+            z-index: 5;
+        }
+
+        .mission-cube {
+            width: 120px; /* Larger cubes */
+            height: 120px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(20deg) rotateY(-30deg); /* Initial 3D tilt */
+            transition: transform 0.8s ease-out, box-shadow 0.5s ease-out;
+            cursor: pointer;
+            perspective: 600px; /* For internal cube rotation */
+            border-radius: 8px; /* Softer edges */
+            animation: floatCube 8s infinite alternate ease-in-out; /* Gentle floating */
+        }
+
+        @keyframes floatCube {
+            0% { transform: translateY(0) rotateX(20deg) rotateY(-30deg); }
+            50% { transform: translateY(-10px) rotateX(22deg) rotateY(-28deg); }
+            100% { transform: translateY(0) rotateX(20deg) rotateY(-30deg); }
+        }
+
+        .mission-cube:hover {
+            transform: scale(1.05) rotateX(15deg) rotateY(-25deg);
+            z-index: 20; /* Bring hovered cube forward */
+        }
+
+        .cube-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #ccc;
+            opacity: 0.9;
+            transition: all 0.5s ease;
+            backface-visibility: hidden; /* Hide backface during rotation */
+            border-radius: 8px;
+        }
+        /* Positions for 3D cube faces */
+        .front  { transform: rotateY(0deg) translateZ(60px); }
+        .back   { transform: rotateX(180deg) translateZ(60px); }
+        .right  { transform: rotateY(90deg) translateZ(60px); }
+        .left   { transform: rotateY(-90deg) translateZ(60px); }
+        .top    { transform: rotateX(90deg) translateZ(60px); }
+        .bottom { transform: rotateX(-90deg) translateZ(60px); }
+
+        .mission-cube.active .cube-face {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px var(--neon-blue), inset 0 0 5px var(--neon-blue);
+            color: var(--neon-blue);
+        }
+        .mission-cube.completed .cube-face {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 25px var(--neon-green), inset 0 0 10px var(--neon-green);
+            color: var(--neon-green);
+        }
+
+        .mission-title {
+            position: absolute;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            bottom: 8px;
+            width: 90%;
+            pointer-events: none;
+            text-shadow: 0 0 5px black;
+        }
+        .mission-emoji {
+            font-size: 24px;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: pulseEmoji 3s infinite ease-in-out alternate;
+        }
+        @keyframes pulseEmoji {
+            0% { transform: translateX(-50%) scale(1); opacity: 0.8; }
+            50% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+            100% { transform: translateX(-50%) scale(1); opacity: 0.8; }
+        }
+
         /* Tooltip nhiệm vụ */
-        .mission-info { display: none; position: absolute; top: 60px; left: 50%; transform: translateX(-50%); width: 200px; background: rgba(1, 4, 9, 0.9); border: 1px solid var(--ditp-green); padding: 10px; border-radius: 8px; font-size: 10px; z-index: 100; backdrop-filter: blur(10px); }
-        .orb:hover .mission-info { display: block; }
+        .mission-tooltip {
+            position: absolute;
+            bottom: 100%; /* Position above the cube */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px; /* Larger tooltip */
+            background: rgba(1, 4, 9, 0.95);
+            border: 1px solid var(--neon-blue);
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 11px;
+            color: #eee;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            display: none;
+            z-index: 101;
+            backdrop-filter: blur(15px);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none; /* Allows clicks on elements below */
+        }
+        .mission-cube:hover .mission-tooltip {
+            display: block;
+            opacity: 1;
+            pointer-events: auto; /* Enable clicks when visible */
+        }
+        .mission-tooltip::before { /* Arrow for tooltip */
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: var(--neon-blue);
+        }
+
+        .key-btn { width: 55px; height: 55px; border: 1px solid rgba(49, 173, 161, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; color: var(--ditp-green); cursor: pointer; }
+
     </style>
 </head>
 <body>
-<div class="nebula"></div>
-<svg class="neural-svg" id="neural-net"></svg>
+<div class="galaxy-background"></div>
 
 <div class="relative z-10">
     <header class="hud sticky top-0 p-4 flex justify-between items-center z-50">
         <div class="flex items-center gap-4">
-            <img src="Logo-chia-se-trach-nhiem.png" class="w-10 h-10 object-contain" onerror="this.src='https://via.placeholder.com/40?text=DITP'">
+            <img src="Logo-chia-se-trach-nhiem.png" class="w-12 h-12 object-contain" onerror="this.src='https://via.placeholder.com/48?text=DITP'">
             <div>
                 <h1 class="text-[9px] font-black tracking-widest uppercase italic text-[#31ada1]">DITP GALAXY HUB</h1>
                 <div class="flex items-center gap-2 mt-0.5">
@@ -45,7 +202,7 @@
         </div>
         <button onclick="showAuth()" id="auth-btn" class="text-[8px] border border-[#31ada1]/40 px-4 py-1.5 rounded-full text-[#31ada1] uppercase">Commander</button>
     </header>
-    <main id="star-map" class="relative w-full min-h-[8500px] pt-16 px-6"></main>
+    <main id="star-map"></main>
 </div>
 
 <div id="auth-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:1000; align-items:center; justify-content:center; backdrop-filter: blur(20px);">
@@ -65,22 +222,21 @@
 <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx05iotVqNi1yvApmFyAyGGxgoeVH2tvcD--oYFw1xzKA8KBC-zzFVWic3yNkiYLovmNQ/exec';
     
-    const titles = ["Chốt cổ đông", "Xác lập IP", "Tuyển Core 5", "Pháp nhân DITP", "MOU HTC", "Bản quyền 9.0", "VP R&D", "Hồ sơ Liên minh", "Ngân sách 12T", "Demo v1.0", "Pre-FS v1.6", "Tờ trình đầu tư", "Điều khoản ưu tiên", "Báo cáo C06", "Sandbox Scoring", "Dữ liệu sạch", "Ủng hộ Bộ", "Bảo mật C4", "Dashboard", "Phê duyệt", "Rà soát 15 Bộ", "Hợp nhất HC", "Hạ tầng DC", "VNeID thử", "API Dân cư", "An ninh mạng", "App Cán bộ", "Chạy điểm", "AI Tuning", "Nghiệm thu GĐ1", "Startup ngành", "Góp vốn IP", "BCC RAR", "Thuật toán TM", "Phí API", "MOU Ngân hàng", "Voucher An sinh", "VNeID Truyền thông", "Gọi vốn Startup", "1M Giao dịch", "Dòng tiền API", "Kiểm toán quốc tế", "Nâng cấp AI", "Phủ 15 nhóm", "Hội thảo Data", "Thoái vốn", "Lộ trình niêm yết", "Báo cáo ESG", "Nộp hồ sơ", "IPO"];
-    const emojis = ["🤖", "🐱", "🦆", "⚙️", "🤝", "📊", "🛡️", "📜", "💰", "🚀"];
+    const titles = ["Chốt cổ đông", "Xác lập IP", "Tuyển Core 5", "Pháp nhân DITP", "MOU HTC", "Bản quyền 9.0", "VP R&D", "Hồ sơ Liên minh", "Ngân sách 12T", "Demo v1.0", "Pre-FS v1.6", "Tờ trình đầu tư", "Điều khoản ưu tiên", "Báo cáo C06", "Sandbox Scoring", "Dữ liệu sạch", "Ủng hộ Bộ", "Bảo mật C4", "Dashboard", "Phê duyệt", "Rà soát 15 Bộ", "Hợp nhất HC", "Hạ tầng DC", "VNeID thử", "API Dân cư", "An ninh mạng", "App Cán bộ", "Chạy điểm", "AI Tuning", "Nghiệm thu GĐ1", "Startup ngành", "Góp vốn IP", "BCC RAR", "Thuật toán TM", "Phí API", "MOU Ngân hàng", "Voucher An sinh", "VNeID Truyền thông", "Gọi vốn Startup", "1M Giao dịch", "Dòng tiền API", "Kiểm toán quốc tế", "Nâng cấp AI", "Phủ 15 nhóm", "Hội thảo Data", "Thoái vốn", "Lộ trình niêm yết", "Báo cáo ESG", "Nộp hồ sơ", "50. IPO"];
+    const emojis = ["🤖", "🐱", "🦆", "⚙️", "🤝", "📊", "🛡️", "📜", "💰", "🚀", "💡", "📡", "🛰️", "🚀", "🌌", "🌠", "🌍", "🔥", "✨", "🌟"]; // Thêm emoji để đa dạng hơn
     
     let missions = Array.from({length: 50}, (_, i) => ({ 
-        id: i + 1, title: titles[i], status: false, note: "", doc: "",
-        x: (i % 2 === 0 ? 12 : 55), y: i * 160 + 100 
+        id: i + 1, title: titles[i], status: false, note: "", doc: "#"
     }));
     let isAdmin = false;
     let pin = "";
 
     async function init() {
-        render();
-        await fetchFromSheets();
-        setInterval(fetchFromSheets, 4000);
-        
-        // HỖ TRỢ BÀN PHÍM VẬT LÝ
+        await fetchFromSheets(); // Lấy dữ liệu lần đầu
+        setInterval(fetchFromSheets, 4000); // Tự động cập nhật mỗi 4 giây
+        render(); // Render sau khi có dữ liệu
+
+        // HỖ TRỢ BÀN PHÍM VẬT LÝ CHO PASSCODE
         window.addEventListener('keydown', (e) => {
             if (document.getElementById('auth-overlay').style.display === 'flex') {
                 if (e.key >= '0' && e.key <= '9') pressNum(e.key);
@@ -96,43 +252,51 @@
             const data = await response.json();
             if (data && data.length > 0) {
                 data.forEach((item, i) => {
-                    const m = missions[i];
+                    // Kiểm tra item.id có tồn tại không trước khi truy cập
+                    const currentId = item.id || i + 1; 
+                    const m = missions.find(x => x.id === currentId);
                     if (m) {
                         m.status = (item.status === true || item.status === "TRUE");
-                        // Cập nhật Nhận xét và Link từ Cột D, E (nếu anh có trong JSON)
-                        m.note = item.note || "No comments";
+                        m.note = item.note || "Đang chờ cập nhật...";
                         m.doc = item.doc || "#";
                     }
                 });
-                render();
                 document.getElementById('sync-label').innerText = "VŨ TRỤ ĐÃ KẾT NỐI";
+                render(); // Render lại sau khi fetch xong
             }
-        } catch (e) { document.getElementById('sync-label').innerText = "DỰ PHÒNG ACTIVE"; }
+        } catch (e) { 
+            console.error("Lỗi kết nối hoặc đọc Sheets:", e);
+            document.getElementById('sync-label').innerText = "DỰ PHÒNG ACTIVE"; 
+        }
     }
 
     async function toggleTask(id) {
         if (!isAdmin) return;
         const m = missions.find(x => x.id === id);
-        if (id > 1 && !missions[id-2].status && !m.status) return;
+        // Ngăn không cho tích task nếu task trước chưa hoàn thành
+        if (id > 1 && !missions[id-2].status && !m.status) {
+            alert("Vui lòng hoàn thành nhiệm vụ trước đó!");
+            return;
+        }
         
         const nextStatus = !m.status;
-        m.status = nextStatus;
+        m.status = nextStatus; // Cập nhật trạng thái ngay lập tức trên UI
         render();
 
+        // Gửi lệnh lưu vào Google Sheets thông qua Apps Script
         try {
             await fetch(SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors',
+                mode: 'no-cors', // Cần no-cors để bỏ qua CORS policy khi POST
                 body: JSON.stringify({ id: id, status: nextStatus })
             });
-        } catch (e) { console.error("Sync failed"); }
+        } catch (e) { console.error("Lưu Sheets thất bại:", e); }
     }
 
     function render() {
         const map = document.getElementById('star-map');
-        const svg = document.getElementById('neural-net');
         if (!map) return;
-        map.innerHTML = ''; svg.innerHTML = '';
+        map.innerHTML = ''; 
         let done = missions.filter(m => m.status).length;
         document.getElementById('p-bar').style.width = (done/50)*100 + '%';
         
@@ -140,28 +304,28 @@
             const avail = i === 0 || missions[i-1].status;
             const state = m.status ? 'completed' : (avail ? 'active' : 'locked');
             const el = document.createElement('div');
-            el.className = `orb ${state}`;
-            el.style.left = m.x + '%'; el.style.top = m.y + 'px';
+            el.className = `mission-cube ${state}`;
             el.onclick = () => toggleTask(m.id);
+            
+            // Render các mặt của khối lập phương
             el.innerHTML = `
-                ${m.status ? `<div class="mascot-emoji">${emojis[i % emojis.length]}</div>` : ''}
-                <div class="orb-core"></div>
-                <div class="absolute -right-32 top-5 w-28 text-[7px] font-bold text-slate-500 uppercase leading-tight">${m.title}</div>
-                <div class="mission-info">
-                    <p class="text-white font-bold mb-1">${m.title}</p>
-                    <p class="text-slate-400 mb-2 italic">${m.note}</p>
-                    ${m.doc !== "#" ? `<a href="${m.doc}" target="_blank" class="text-[#31ada1] underline">Xem tài liệu</a>` : ""}
+                <div class="cube-face front">
+                    <span class="mission-emoji">${m.status ? emojis[i % emojis.length] : ''}</span>
+                    <span class="mission-title">${m.title}</span>
+                </div>
+                <div class="cube-face back"></div>
+                <div class="cube-face right"></div>
+                <div class="cube-face left"></div>
+                <div class="cube-face top"></div>
+                <div class="cube-face bottom"></div>
+                
+                <div class="mission-tooltip">
+                    <p class="text-white font-bold mb-1 text-[13px]">${m.title}</p>
+                    <p class="text-slate-400 mb-2 italic text-[10px]">${m.note}</p>
+                    ${m.doc && m.doc !== "#" ? `<a href="${m.doc}" target="_blank" class="text-neon-blue underline text-[10px] block mt-2">Xem tài liệu đính kèm</a>` : ""}
                 </div>
             `;
             map.appendChild(el);
-            if (i > 0) {
-                const prev = missions[i-1];
-                const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                const d = `M ${prev.x+3}% ${prev.y+25} Q ${(prev.x+m.x)/2}% ${(prev.y+m.y)/2} ${m.x+3}% ${m.y+25}`;
-                line.setAttribute("d", d);
-                line.setAttribute("class", "flow-line");
-                svg.appendChild(line);
-            }
         });
     }
 
