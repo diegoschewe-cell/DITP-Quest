@@ -2,18 +2,15 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>DITP | GALAXY COMMAND OS v26.0</title>
+    <title>DITP | GALAXY COMMAND OS v26.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { --neon: #31ada1; --bg: #010409; --active: #00f2ff; --gold: #ffcc00; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow-x: hidden; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        
-        /* 1. BACKGROUND ENGINE: STARS */
         #star-canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
 
-        /* 2. ROADMAP LAYOUT & CONNECTORS */
         #mission-grid { 
             position: relative; z-index: 10; display: flex; flex-wrap: wrap; 
             gap: 50px; justify-content: center; padding: 50px 20px 200px 20px; 
@@ -38,7 +35,6 @@
             100% { transform: scale(1); box-shadow: 0 0 20px var(--active); }
         }
 
-        /* 3. NEON PATHS (Roadmap Connections) */
         .node-card::after {
             content: ''; position: absolute; top: 50%; right: -52px;
             width: 50px; height: 2px; background: rgba(255, 255, 255, 0.05); z-index: -1;
@@ -46,9 +42,6 @@
         .completed::after { background: var(--neon); box-shadow: 0 0 15px var(--neon); }
         .node-card:nth-child(5n)::after { display: none; }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-
-        /* 4. UI COMPONENTS: MODALS & BUTTONS */
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; align-items:center; justify-content:center; backdrop-filter: blur(15px); }
         .modal-box { background: #0a192f; border: 1px solid var(--active); padding: 30px; border-radius: 20px; width: 480px; box-shadow: 0 0 50px rgba(0, 242, 255, 0.3); }
         input, textarea { background: rgba(0,0,0,0.5); border: 1px solid #333; color: white; width: 100%; padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 13px; border: 1px solid rgba(0, 242, 255, 0.2); }
@@ -57,7 +50,6 @@
         
         .ts-tag { font-size: 9px; color: var(--neon); font-family: 'Orbitron'; margin-top: 10px; display: block; opacity: 0.8; }
         .link-pill { font-size: 8px; border: 1px solid var(--neon); padding: 3px 8px; border-radius: 5px; color: var(--neon); margin-right: 5px; margin-top: 5px; display: inline-block; transition: 0.3s; }
-        .link-pill:hover { background: var(--neon); color: black; }
     </style>
 </head>
 <body>
@@ -68,7 +60,7 @@
             <img src="logo-ditp.png" class="w-14 h-14 object-contain" onerror="this.src='https://via.placeholder.com/64'">
             <div>
                 <h1 class="orbitron text-2xl font-black text-white tracking-[0.2em]">GALAXY COMMAND</h1>
-                <p id="system-msg" class="text-[10px] text-cyan-400 orbitron animate-pulse">SYSTEM VERSION 26.0 // AUDIT LOG: ON</p>
+                <p id="system-msg" class="text-[10px] text-cyan-400 orbitron animate-pulse">SYSTEM VERSION 26.2 // AUDIT LOG: ON</p>
             </div>
         </div>
         <div class="text-right flex items-center gap-8">
@@ -95,8 +87,8 @@
                 <div><label class="text-[10px] text-gray-400 font-bold uppercase">Ghi Chú Báo Cáo (Text)</label><textarea id="m-note" rows="3" spellcheck="false"></textarea></div>
                 <div><label class="text-[10px] text-gray-400 font-bold uppercase">Links Tài Liệu (Cách nhau dấu phẩy)</label><input id="m-doc" type="text" placeholder="https://link1.com, https://link2.com"></div>
             </div>
-            <button onclick="markNodeComplete()" class="w-full bg-emerald-500 text-black font-black orbitron text-[10px] py-3 rounded-lg mb-2 shadow-[0_0_15px_#10b981] hover:scale-105 transition">MARK AS MISSION COMPLETE</button>
-            <button onclick="saveNodeData()" class="btn-neon orbitron">Sync to Galaxy Sheet</button>
+            <button onclick="markNodeComplete()" class="w-full bg-emerald-500 text-black font-black orbitron text-[10px] py-4 rounded-lg mt-4 mb-2 shadow-[0_0_15px_#10b981] hover:scale-105 transition">MARK AS MISSION COMPLETE</button>
+            <button onclick="saveNodeData()" class="btn-neon orbitron text-[10px]">Sync to Galaxy Sheet</button>
             <button onclick="closeModal('edit-modal')" class="w-full text-gray-500 text-[10px] mt-4 uppercase orbitron">Discard</button>
         </div>
     </div>
@@ -113,23 +105,15 @@
     </div>
 
 <script>
-    /**
-     * CẤU HÌNH HỆ THỐNG
-     * A: ID | B: status | C: title | D: note | E: doc | F: timestamp
-     */
     const API_URL = "https://api.sheetbest.com/sheets/d418f240-85d9-4280-a1b2-3318dc6ba411";
     let missions = []; let isAdmin = false; let currentIdx = null; let isSyncing = false;
 
-    // --- HÀM 1: KHỞI TẠO NỀN THIÊN HÀ (STARFIELD ENGINE) ---
     const canvas = document.getElementById('star-canvas');
     const ctx = canvas.getContext('2d');
     let stars = [];
     function initStars() {
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        stars = Array.from({length: 300}, () => ({ 
-            x: Math.random()*canvas.width, y: Math.random()*canvas.height, 
-            size: Math.random()*1.6, speed: Math.random()*0.3 + 0.1 
-        }));
+        stars = Array.from({length: 300}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*1.6, speed: Math.random()*0.3 + 0.1 }));
     }
     function drawStars() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -142,7 +126,6 @@
     }
     window.addEventListener('resize', initStars); initStars(); drawStars();
 
-    // --- HÀM 2: GIAO TIẾP DỮ LIỆU (API FETCHING) ---
     async function fetchData() {
         if (isSyncing) return;
         try {
@@ -158,12 +141,9 @@
             }));
             render();
             document.getElementById('system-msg').innerText = "VŨ TRỤ ĐÃ KẾT NỐI // REAL-TIME SYNC ON";
-        } catch (e) { 
-            document.getElementById('system-msg').innerText = "MẤT KẾT NỐI // RECONNECTING...";
-        }
+        } catch (e) { document.getElementById('system-msg').innerText = "MẤT KẾT NỐI // RECONNECTING..."; }
     }
 
-    // --- HÀM 3: HIỂN THỊ GIAO DIỆN (RENDERING ENGINE) ---
     function render() {
         const grid = document.getElementById('mission-grid');
         grid.innerHTML = '';
@@ -173,7 +153,6 @@
         document.getElementById('p-bar').style.width = p + '%';
 
         missions.forEach((m, i) => {
-            // Phân tách các trạm (Stations)
             if (i === 0) grid.innerHTML += `<div class="w-full orbitron text-center py-6 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] tracking-[1.5em] text-[12px] font-bold">--- STATION 01: GENESIS ---</div>`;
             if (i === 10) grid.innerHTML += `<div class="w-full orbitron text-center py-6 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] tracking-[1.5em] text-[12px] font-bold">--- STATION 02: TACTICS ---</div>`;
             
@@ -182,7 +161,6 @@
             const card = document.createElement('div');
             card.className = `node-card ${state}`;
             
-            // Xử lý nhiều Link
             const links = m.doc ? m.doc.split(',').filter(l => l.trim().startsWith('http')) : [];
             let linkHtml = links.map((l, idx) => `<a href="${l.trim()}" target="_blank" onclick="event.stopPropagation()" class="link-pill">FILE ${idx+1}</a>`).join('');
 
@@ -191,7 +169,7 @@
                     <span class="text-[10px] orbitron font-black text-gray-500">NODE ${String(m.id).padStart(2,'0')}</span>
                     <button onclick="openEditModal(event, ${i})" class="text-[12px] text-gray-400 hover:text-white transition-colors">✎</button>
                 </div>
-                <h3 class="text-[12px] orbitron font-black uppercase leading-tight h-10 overflow-hidden text-white/90">${m.title}</h3>
+                <h3 class="text-[12px] orbitron font-bold uppercase leading-tight h-10 overflow-hidden text-white/90">${m.title}</h3>
                 <p class="text-[9px] text-emerald-400 italic mt-4 min-h-[45px] leading-relaxed border-l-2 border-emerald-900/50 pl-3">${m.note || 'Intel pending...'}</p>
                 <div class="flex flex-wrap gap-1 mt-4">${linkHtml}</div>
                 ${m.ts ? `<span class="ts-tag">LOGGED: ${m.ts}</span>` : ''}
@@ -202,35 +180,23 @@
         });
     }
 
-    // --- HÀM 4: XỬ LÝ TƯƠNG TÁC (USER INTERACTION) ---
     function handleNodeAction(idx) {
         if(!isAdmin) { showAuth(); return; }
         const m = missions[idx];
-        
-        // Chốt chặn logic: Phải có Note và Link mới được hoàn thành
         if(!m.status && (!m.note || m.note.length < 5 || !m.doc)) {
-            alert("SECURITY ALERT: Vui lòng nhập Ghi chú báo cáo và Link tài liệu trước khi chốt nhiệm vụ!"); return;
+            alert("SECURITY ALERT: Nhập Ghi chú và Link tài liệu trước!"); return;
         }
-        
         currentIdx = idx;
-        if(m.status) {
-            document.getElementById('timeline-modal').style.display = 'flex';
-        } else {
-            commitToggle();
-        }
+        if(m.status) { document.getElementById('timeline-modal').style.display = 'flex'; } else { commitToggle(); }
     }
 
     async function commitToggle() {
-        isSyncing = true;
-        closeModal('timeline-modal');
+        isSyncing = true; closeModal('timeline-modal');
         const m = missions[currentIdx];
         m.status = !m.status;
-        
-        // Auto-Timestamp (Giờ Việt Nam)
         const now = new Date();
         const ts = m.status ? `${now.getDate()}/${now.getMonth()+1} ${now.getHours()}:${now.getMinutes()}` : "";
         m.ts = ts;
-        
         render();
         await fetch(`${API_URL}/${currentIdx}`, { 
             method: "PATCH", headers: {"Content-Type":"application/json"}, 
@@ -248,13 +214,10 @@
         document.getElementById('edit-modal').style.display = 'flex';
     }
 
-    // HÀM 4.1. LƯU DỮ LIỆU TỔNG HỢP: Đẩy Title, Note, Doc, Status và Timestamp lên Sheet
-        async function saveNodeData() {
+    async function saveNodeData() {
         if (currentIdx === null) return;
         isSyncing = true;
         const m = missions[currentIdx];
-        
-        // Gói dữ liệu dùng Key khớp 100% với hàng tiêu đề trong ảnh image_af3e27.png
         const upData = {
             "title": document.getElementById('m-title').value,
             "note": document.getElementById('m-note').value,
@@ -262,66 +225,36 @@
             "status": m.status ? "TRUE" : "FALSE",
             "timestamp": m.ts || ""
         };
-
-        // Cập nhật bộ nhớ tạm trên Web
         Object.assign(m, { title: upData.title, note: upData.note, doc: upData.doc });
-        render(); 
-        closeModal('edit-modal');
-
-        try {
-            // Gửi lệnh ghi đè lên hàng tương ứng (idx)
-            const response = await fetch(`${API_URL}/${currentIdx}`, { 
-                method: "PATCH", 
-                headers: {"Content-Type":"application/json"}, 
-                body: JSON.stringify(upData) 
-            });
-            
-            if(response.ok) {
-                document.getElementById('system-msg').innerText = "GALAXY SYNC: NHIỆM VỤ ĐÃ ĐƯỢC GHI LẠI";
-            }
-        } catch (e) {
-            document.getElementById('system-msg').innerText = "GALAXY SYNC: LỖI KẾT NỐI NGƯỢC";
-        }
-
-        // Đợi 3 giây để Sheet ổn định rồi mới cho phép fetch dữ liệu mới
-        setTimeout(() => { isSyncing = false; fetchData(); }, 3000);
-        }
-
-        // 2. Cập nhật ngay lập tức vào bộ nhớ tạm (Missions array) để Web hiển thị không độ trễ
-        Object.assign(m, {
-            title: upData.C, 
-            note: upData.D, 
-            doc: upData.E,
-            status: m.status,
-            ts: m.ts
-        });
-
-        render(); 
-        closeModal('edit-modal');
-
-        // 3. Gửi lệnh PATCH qua API SheetBest để ghi vào đúng hàng tương ứng trên Sheet
+        render(); closeModal('edit-modal');
         try {
             await fetch(`${API_URL}/${currentIdx}`, { 
-                method: "PATCH", 
-                headers: {"Content-Type":"application/json"}, 
+                method: "PATCH", headers: {"Content-Type":"application/json"}, 
                 body: JSON.stringify(upData) 
             });
-            console.log("Galaxy System: Node " + (currentIdx + 1) + " Synced.");
-        } catch (e) {
-            console.error("Galaxy System: Sync Failed.", e);
-        }
-
-        // 4. Mở khóa đồng bộ sau 2.5 giây để tránh xung đột dữ liệu
+        } catch (e) { console.error(e); }
         setTimeout(() => { isSyncing = false; fetchData(); }, 2500);
     }
 
-    // HÀM ĐÓNG MODAL
-    function closeModal(id) { 
-        document.getElementById(id).style.display = 'none'; 
-        currentIdx = null; // Reset index để an toàn
+    async function markNodeComplete() {
+        if (currentIdx === null) return;
+        const m = missions[currentIdx];
+        const noteInput = document.getElementById('m-note').value;
+        const docInput = document.getElementById('m-doc').value;
+        if(!noteInput || noteInput.length < 2 || !docInput) {
+            alert("SECURITY: Nhập đủ Ghi chú báo cáo và Link trước khi chốt!");
+            return;
+        }
+        m.status = true;
+        const now = new Date();
+        m.ts = `${now.getDate()}/${now.getMonth()+1} ${now.getHours()}:${now.getMinutes()}`;
+        await saveNodeData();
     }
 
-    // --- HÀM 5: BẢO MẬT (SECURITY & AUTH) ---
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; pin = ""; }
+    function closeAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
+    
     let pin = "";
     function pressNum(n) { 
         pin += n; 
@@ -333,41 +266,8 @@
         } 
         if(pin.length >= 4) pin = ""; 
     }
-    function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; pin = ""; }
-    function closeAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
     window.addEventListener('keydown', (e) => { if(!isAdmin && e.key >= '0' && e.key <= '9') pressNum(e.key); });
-    
-    // --- HÀM 6: CONFIRM MISSION ---
-    async function markNodeComplete() {
-        if (currentIdx === null) return;
-        
-        // LẤY DỮ LIỆU THỰC TẾ TỪ Ô NHẬP LIỆU (Fix lỗi báo SECURITY)
-        const noteInput = document.getElementById('m-note').value;
-        const docInput = document.getElementById('m-doc').value;
-        
-        if(!noteInput || noteInput.length < 2 || !docInput) {
-            alert("SECURITY: Anh Hiếu cần nhập đủ Ghi chú báo cáo và Link trước khi chốt!");
-            return;
-        }
 
-        const m = missions[currentIdx];
-        m.status = true; // Bật đèn xanh
-        const now = new Date();
-        // Ghi mốc thời gian hoàn thành theo giờ Việt Nam
-        m.ts = `${now.getDate()}/${now.getMonth()+1} ${now.getHours()}:${now.getMinutes()}`;
-        
-        // Kích hoạt chuỗi lưu dữ liệu lên Sheet
-        await saveNodeData();
-    }
-    m.status = true;
-    const now = new Date();
-    m.ts = `${now.getDate()}/${now.getMonth()+1} ${now.getHours()}:${now.getMinutes()}`;
-
-    saveNodeData(); // Gọi hàm save có sẵn để đồng bộ lên Sheet
-    closeModal('edit-modal');
-    }
-
-    // KHỞI CHẠY HỆ THỐNG
     fetchData(); setInterval(fetchData, 15000);
 </script>
 
