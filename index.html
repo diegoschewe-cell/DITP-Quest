@@ -6,83 +6,81 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #31ada1; --bg: #010409; --active: #00f2ff; --white-glow: #ffffff; }
+        :root { --neon: #31ada1; --bg: #010409; --active: #00f2ff; --current: #fde047; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow-x: hidden; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        #star-canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
-
-        /* 1. STATION DIVIDERS - PHÁT SÁNG TRẮNG */
+        #star-canvas { position: fixed; inset: 0; z-index: -1; }
+        #mission-grid { position: relative; z-index: 10; display: flex; flex-wrap: wrap; gap: 40px; justify-content: center; padding: 40px 20px 150px 20px; }
+        
+        /* 1. Station Glow - Phát sáng trắng nhận diện trạm */
         .section-divider { 
-            color: var(--white-glow); text-shadow: 0 0 10px var(--white-glow), 0 0 20px var(--white-glow);
-            letter-spacing: 1.5em; font-size: 12px; margin: 40px 0 20px 0; text-align: center; 
-            text-transform: uppercase; width: 100%; font-family: 'Orbitron'; font-weight: 900;
+            color: #fff; text-shadow: 0 0 15px #fff, 0 0 30px #fff; 
+            font-weight: 900; letter-spacing: 0.8em; opacity: 1 !important;
         }
 
-        /* 2. NODE STYLING & CURRENT FOCUS */
-        #mission-grid { display: flex; flex-wrap: wrap; gap: 40px; justify-content: center; padding: 40px 20px 150px 20px; }
         .node-card { 
             background: rgba(1, 4, 9, 0.85); border: 2px solid rgba(255,255,255,0.1); 
-            border-radius: 12px; padding: 16px; width: 230px; min-height: 180px;
+            border-radius: 12px; padding: 16px; width: 230px; min-height: 185px;
             transition: 0.4s; cursor: pointer; position: relative; backdrop-filter: blur(8px);
         }
-        .completed { border-color: var(--neon); box-shadow: 0 0 20px rgba(49, 173, 161, 0.4); }
+        .completed { border-color: var(--neon); box-shadow: 0 0 25px rgba(49, 173, 161, 0.4); }
         
-        /* HIỆU ỨNG CHO NODE HIỆN TẠI (PHÁT SÁNG ĐẶC BIỆT) */
+        /* 4. Current Node Spotlight - Phát sáng đặc biệt cho node hiện hành */
         .active { 
-            border-color: var(--active); 
-            box-shadow: 0 0 20px var(--active), inset 0 0 10px var(--active);
-            animation: pulse-focus 1.5s infinite;
+            border-color: var(--current); border-style: solid;
+            box-shadow: 0 0 20px var(--current); 
+            animation: pulse-gold 2s infinite; 
         }
-        @keyframes pulse-focus { 
-            0% { transform: scale(1); border-color: var(--active); } 
-            50% { transform: scale(1.03); border-color: #ffffff; } 
-            100% { transform: scale(1); border-color: var(--active); } 
-        }
+        @keyframes pulse-gold { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
 
-        .locked { opacity: 0.2; filter: grayscale(1); cursor: not-allowed; }
+        .locked { opacity: 0.25; filter: grayscale(1); cursor: not-allowed; }
+        .node-card::after { content: ''; position: absolute; top: 50%; right: -42px; width: 42px; height: 2px; background: rgba(255, 255, 255, 0.05); z-index: -1; }
+        .completed::after { background: var(--neon); box-shadow: 0 0 12px var(--neon); }
 
-        /* 3. MODAL CONFIGURATION */
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; align-items:center; justify-content:center; backdrop-filter: blur(15px); }
-        .modal-box { background: #0a192f; border: 1px solid var(--active); padding: 30px; border-radius: 20px; width: 450px; box-shadow: 0 0 40px rgba(0, 242, 255, 0.3); }
-        input, textarea { background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 242, 255, 0.2); color: white; width: 100%; padding: 10px; border-radius: 8px; margin-top: 5px; font-size: 13px; }
+        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:1000; align-items:center; justify-content:center; backdrop-filter: blur(10px); }
+        .modal-box { background: #0a192f; border: 1px solid var(--active); padding: 30px; border-radius: 15px; width: 450px; }
+        input, textarea { background: rgba(0,0,0,0.4); border: 1px solid #333; color: white; width: 100%; padding: 10px; border-radius: 6px; margin-top: 6px; font-size: 13px; }
         
-        .btn-neon { background: var(--neon); color: black; font-weight: 900; border-radius: 8px; padding: 12px; width: 100%; margin-top: 15px; text-transform: uppercase; transition: 0.3s; }
-        .btn-complete { background: #10b981; color: white; border: 2px solid #ffffff; } /* Nút thắp sáng node */
+        .btn-neon { background: var(--neon); color: black; font-weight: 900; border-radius: 6px; padding: 12px; width: 100%; margin-top: 10px; text-transform: uppercase; }
+        .btn-complete { background: #fff; color: #000; box-shadow: 0 0 15px #fff; }
         
-        .ts-display { font-size: 9px; color: var(--neon); margin-top: 10px; display: block; font-family: 'Orbitron'; }
+        .ts-tag { font-size: 8px; color: var(--neon); margin-top: 8px; font-family: 'Orbitron'; display: block; opacity: 0.7; }
+        .link-pill { font-size: 8px; border: 1px solid var(--neon); padding: 2px 6px; border-radius: 4px; color: var(--neon); }
     </style>
 </head>
-<body class="p-4 overflow-y-auto">
+<body class="p-4">
     <canvas id="star-canvas"></canvas>
 
     <header class="p-6 mb-12 flex justify-between items-center sticky top-0 z-50 border border-white/10 bg-black/70 backdrop-blur-xl rounded-2xl">
         <div class="flex items-center gap-4">
             <img src="logo-ditp.png" class="w-12 h-12 object-contain" onerror="this.src='https://via.placeholder.com/48'">
-            <div><h1 class="orbitron text-2xl font-black text-white">GALAXY ROADMAP</h1><p class="text-[9px] text-cyan-400 orbitron">V26.1 - COMMANDER CENTER</p></div>
+            <div>
+                <h1 class="orbitron text-2xl font-black text-white">GALAXY ROADMAP</h1>
+                <p id="status-label" class="text-[9px] text-cyan-400 orbitron">V26.1 ULTIMATE EDITION</p>
+            </div>
         </div>
         <div class="text-right">
             <p id="integrity-val" class="orbitron text-4xl font-black text-emerald-400">0%</p>
-            <button onclick="showAuth()" id="auth-btn" class="text-[10px] orbitron border border-cyan-500 px-5 py-2 rounded-full text-cyan-500">COMMANDER LOGIN</button>
+            <button onclick="showAuth()" id="auth-btn" class="text-[10px] orbitron border border-cyan-500 px-5 py-2 rounded-full text-cyan-500">COMMANDER ACCESS</button>
         </div>
     </header>
 
     <div id="mission-grid"></div>
 
-    <div id="config-modal" class="modal">
+    <div id="edit-modal" class="modal">
         <div class="modal-box">
             <h2 class="orbitron text-cyan-400 mb-6 border-b border-cyan-900 pb-3 text-lg font-bold">NODE CONFIGURATION</h2>
             <div class="space-y-4">
-                <div><label class="text-[10px] text-gray-400 uppercase">Tên Nhiệm Vụ</label><input id="m-title" type="text" spellcheck="false"></div>
-                <div><label class="text-[10px] text-gray-400 uppercase">Ghi Chú (Text Note)</label><textarea id="m-note" rows="3" spellcheck="false"></textarea></div>
-                <div><label class="text-[10px] text-gray-400 uppercase">Links Tài Liệu (cách nhau bằng dấu phẩy)</label><input id="m-doc" type="text"></div>
+                <input id="m-title" type="text" placeholder="Tên nhiệm vụ">
+                <textarea id="m-note" rows="3" placeholder="Ghi chú báo cáo..."></textarea>
+                <input id="m-doc" type="text" placeholder="Link 1, Link 2...">
                 
-                <div class="pt-4 border-t border-gray-800">
-                    <p class="text-[9px] text-yellow-500 mb-2 orbitron italic">* Cần có Note & Link để mở khóa chức năng hoàn thành.</p>
-                    <button id="complete-btn" onclick="confirmMissionComplete()" class="btn-neon btn-complete orbitron shadow-lg">XÁC NHẬN MISSION COMPLETE</button>
-                    <button onclick="saveOnlyData()" class="btn-neon orbitron bg-gray-700 text-white mt-2">Lưu dữ liệu (Chưa chốt)</button>
+                <div class="pt-4 space-y-2">
+                    <button onclick="saveChanges()" class="btn-neon orbitron">SYNC DATA TO SHEET</button>
+                    <button id="btn-finish" onclick="completeMission()" class="btn-neon btn-complete orbitron">MARK AS MISSION COMPLETE</button>
                 </div>
             </div>
-            <button onclick="closeModal()" class="w-full text-gray-500 text-[10px] mt-4 uppercase">Discard Changes</button>
+            <button onclick="closeModal()" class="w-full text-gray-500 text-[10px] mt-4 uppercase">Discard</button>
         </div>
     </div>
 
@@ -90,7 +88,7 @@
     const API_URL = "https://api.sheetbest.com/sheets/d418f240-85d9-4280-a1b2-3318dc6ba411";
     let missions = []; let isAdmin = false; let currentIdx = null; let isSyncing = false;
 
-    // --- 1. GALAXY ENGINE (STARS) ---
+    // STARFIELD ENGINE
     const canvas = document.getElementById('star-canvas');
     const ctx = canvas.getContext('2d');
     let stars = [];
@@ -99,13 +97,16 @@
         stars = Array.from({length: 250}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*1.8, speed: Math.random()*0.4 + 0.1 }));
     }
     function drawStars() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-        stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill(); s.y += s.speed; if(s.y > canvas.height) s.y = 0; });
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        stars.forEach(s => {
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill();
+            s.y += s.speed; if(s.y > canvas.height) s.y = 0;
+        });
         requestAnimationFrame(drawStars);
     }
     window.addEventListener('resize', initStars); initStars(); drawStars();
 
-    // --- 2. DATA HANDLING ---
     async function fetchData() {
         if (isSyncing) return;
         try {
@@ -113,11 +114,11 @@
             const data = await res.json();
             missions = data.map((item, i) => ({
                 id: i + 1,
-                title: item.title || item.C || "Node " + (i+1),
-                status: (item.status === "TRUE" || item.B === "TRUE"),
-                note: item.note || item.D || "",
-                doc: item.doc || item.E || "",
-                ts: item.timestamp || item.F || ""
+                title: item.C || "Node " + (i+1),
+                status: (item.B === "TRUE" || item.B === true),
+                note: item.D || "",
+                doc: item.E || "",
+                ts: item.F || "" // 3. Cột F cho Timestamp
             }));
             render();
         } catch (e) { console.error("Sync error"); }
@@ -130,108 +131,106 @@
         document.getElementById('integrity-val').innerText = Math.round((done/missions.length)*100) + '%';
 
         missions.forEach((m, i) => {
-            // RENDER STATION DIVIDERS (PHÁT SÁNG TRẮNG)
-            if (i === 0) grid.innerHTML += `<div class="section-divider">--- STATION 01: GENESIS ---</div>`;
-            if (i === 10) grid.innerHTML += `<div class="section-divider">--- STATION 02: TACTICS ---</div>`;
+            // 1. Station Glow - Phát sáng trắng tiêu đề trạm
+            if (i === 0) grid.innerHTML += `<div class="w-full section-divider orbitron text-center py-8">--- STATION 01: GENESIS ---</div>`;
+            if (i === 10) grid.innerHTML += `<div class="w-full section-divider orbitron text-center py-8">--- STATION 02: TACTICS ---</div>`;
             
             const avail = i === 0 || missions[i-1].status;
             const state = m.status ? 'completed' : (avail ? 'active' : 'locked');
             const card = document.createElement('div');
             card.className = `node-card ${state}`;
-            
             const links = m.doc ? m.doc.split(',').filter(l => l.trim().startsWith('http')) : [];
-            let linkHtml = links.map((l, idx) => `<a href="${l.trim()}" target="_blank" onclick="event.stopPropagation()" class="text-[8px] border border-cyan-800 px-2 rounded mt-2 inline-block mr-1">FILE ${idx+1}</a>`).join('');
+            let linkHtml = links.map((l, idx) => `<a href="${l.trim()}" target="_blank" onclick="event.stopPropagation()" class="link-pill">FILE ${idx+1}</a>`).join(' ');
 
             card.innerHTML = `
-                <div class="flex justify-between items-start mb-2"><span class="text-[9px] orbitron opacity-50">NODE ${String(m.id).padStart(2,'0')}</span><button onclick="openConfig(event, ${i})" class="text-[12px] text-gray-500 hover:text-white">✎</button></div>
-                <h3 class="text-[12px] orbitron font-bold uppercase leading-tight h-10 overflow-hidden">${m.title}</h3>
-                <p class="text-[9px] text-emerald-400 italic mt-3 min-h-[40px] line-clamp-3">${m.note || 'Awaiting intel...'}</p>
-                <div class="mt-2">${linkHtml}</div>
-                ${m.ts ? `<span class="ts-display">LOGGED: ${m.ts}</span>` : ''}
-                ${m.status ? '<div class="absolute -top-3 -right-3 bg-emerald-500 text-black text-[9px] font-black px-2 py-1 rounded-full shadow-lg shadow-emerald-500/50">DONE</div>' : ''}
+                <div class="flex justify-between items-start mb-3"><span class="text-[10px] orbitron font-black text-gray-500">NODE ${String(m.id).padStart(2,'0')}</span><button onclick="openModal(event, ${i})" class="text-[12px] text-gray-500 hover:text-white">✎</button></div>
+                <h3 class="text-[12px] orbitron font-bold uppercase leading-tight h-10 overflow-hidden text-white/90">${m.title}</h3>
+                <p class="text-[9px] text-emerald-400 italic mt-3 min-h-[40px] leading-relaxed border-l border-emerald-900/50 pl-2">${m.note || 'Awaiting intel...'}</p>
+                ${m.ts ? `<span class="ts-tag">LOG: ${m.ts}</span>` : ''}
+                <div class="flex flex-wrap gap-2 mt-4">${linkHtml}</div>
+                ${m.status ? '<div class="absolute -top-3 -right-3 bg-emerald-500 text-black text-[9px] font-black px-3 py-1 rounded-full">COMPLETE</div>' : ''}
             `;
+            // Click card giờ chỉ để mở modal config cho chuyên nghiệp
+            card.onclick = (e) => openModal(e, i);
             grid.appendChild(card);
         });
     }
 
-    // --- 3. MODAL ACTIONS ---
-    function openConfig(e, idx) {
-        e.stopPropagation(); if(!isAdmin) { showAuth(); return; }
-        currentIdx = idx;
+    function openModal(e, idx) {
+        e.stopPropagation();
+        if(!isAdmin) { showAuth(); return; }
         const m = missions[idx];
+        const avail = idx === 0 || missions[idx-1].status;
+        if (!avail && !m.status) { alert("Phải xong Node trước đó!"); return; }
+
+        currentIdx = idx;
         document.getElementById('m-title').value = m.title;
         document.getElementById('m-note').value = m.note;
         document.getElementById('m-doc').value = m.doc;
         
-        // Disable nút complete nếu task đã done
-        document.getElementById('complete-btn').style.display = m.status ? 'none' : 'block';
-        document.getElementById('config-modal').style.display = 'flex';
+        // Hiện/Ẩn nút chốt tùy vào trạng thái
+        const btnFinish = document.getElementById('btn-finish');
+        btnFinish.innerText = m.status ? "REVOKE COMPLETION" : "MARK AS MISSION COMPLETE";
+        btnFinish.style.background = m.status ? "#ff4444" : "#fff";
+        
+        document.getElementById('edit-modal').style.display = 'flex';
     }
 
-    function closeModal() { document.getElementById('config-modal').style.display = 'none'; }
+    async function completeMission() {
+        const m = missions[currentIdx];
+        if(!m.status && (!document.getElementById('m-note').value || !document.getElementById('m-doc').value)) {
+            alert("SECURITY: Phải có Ghi chú và Link trước khi chốt!"); return;
+        }
 
-    // CHỈ LƯU DỮ LIỆU, CHƯA BẬT ĐÈN
-    async function saveOnlyData() {
-        const upData = { 
-            title: document.getElementById('m-title').value, 
-            note: document.getElementById('m-note').value, 
-            doc: document.getElementById('m-doc').value 
-        };
-        updateAndSync(upData, false);
-    }
-
-    // XÁC NHẬN HOÀN THÀNH - GHI TIMESTAMP & THẮP SÁNG
-    async function confirmMissionComplete() {
-        const title = document.getElementById('m-title').value;
-        const note = document.getElementById('m-note').value;
-        const doc = document.getElementById('m-doc').value;
-        
-        if(!note || !doc) { alert("SECURITY ALERT: Không thể chốt Node nếu chưa có Ghi chú và Link tài liệu!"); return; }
-        
-        const now = new Date();
-        const timestamp = `${now.getDate()}/${now.getMonth()+1} ${now.getHours()}:${now.getMinutes()}`;
-        
-        const upData = { title, note, doc, status: "TRUE", timestamp: timestamp };
-        updateAndSync(upData, true);
-    }
-
-    async function updateAndSync(payload, isClosing) {
         isSyncing = true;
-        // Mapping lại tên cột chuẩn cho SheetBest (B, C, D, E, F)
-        const sheetData = { 
-            "C": payload.title, 
-            "D": payload.note, 
-            "E": payload.doc 
-        };
-        if(payload.status) sheetData["B"] = "TRUE";
-        if(payload.timestamp) sheetData["F"] = payload.timestamp;
-
-        // Cập nhật giao diện local ngay lập tức
-        Object.assign(missions[currentIdx], {
-            title: payload.title, note: payload.note, doc: payload.doc,
-            status: payload.status === "TRUE" ? true : missions[currentIdx].status,
-            ts: payload.timestamp || missions[currentIdx].ts
-        });
+        const now = new Date();
+        const tsStr = !m.status ? `${now.getHours()}:${now.getMinutes()} ${now.getDate()}/${now.getMonth()+1}` : "";
         
-        render(); if(isClosing) closeModal();
+        m.status = !m.status;
+        m.ts = tsStr;
+        m.title = document.getElementById('m-title').value;
+        m.note = document.getElementById('m-note').value;
+        m.doc = document.getElementById('m-doc').value;
+
+        render();
+        closeModal();
 
         await fetch(`${API_URL}/${currentIdx}`, { 
-            method: "PATCH", headers: {"Content-Type":"application/json"}, 
-            body: JSON.stringify(sheetData) 
+            method: "PATCH", 
+            headers: {"Content-Type":"application/json"}, 
+            body: JSON.stringify({
+                B: m.status ? "TRUE" : "FALSE",
+                C: m.title,
+                D: m.note,
+                E: m.doc,
+                F: m.ts // 3. Ghi Timestamp vào cột F
+            }) 
         });
         setTimeout(() => { isSyncing = false; fetchData(); }, 2000);
     }
 
-    // --- 4. AUTH & UTILS ---
+    async function saveChanges() {
+        isSyncing = true;
+        const upData = { 
+            C: document.getElementById('m-title').value, 
+            D: document.getElementById('m-note').value, 
+            E: document.getElementById('m-doc').value 
+        };
+        Object.assign(missions[currentIdx], {title: upData.C, note: upData.D, doc: upData.E});
+        render(); closeModal();
+        await fetch(`${API_URL}/${currentIdx}`, { method: "PATCH", headers: {"Content-Type":"application/json"}, body: JSON.stringify(upData) });
+        setTimeout(() => { isSyncing = false; fetchData(); }, 2500);
+    }
+
+    function closeModal() { document.getElementById('edit-modal').style.display = 'none'; }
     let pin = "";
     function pressNum(n) { pin += n; if(pin === "1909") { isAdmin = true; closeAuth(); document.getElementById('auth-btn').innerText = "COMMANDER ACTIVE"; render(); } if(pin.length >= 4) pin = ""; }
     function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; pin = ""; }
     function closeAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
     window.addEventListener('keydown', (e) => { if(!isAdmin && e.key >= '0' && e.key <= '9') pressNum(e.key); });
 
-    fetchData(); setInterval(fetchData, 10000);
+    fetchData(); setInterval(fetchData, 12000);
 </script>
-
-<div id="auth-overlay" class="modal"><div class="modal-box text-center"><p class="orbitron text-cyan-400 mb-4">SECURITY CHALLENGE: 1909</p></div></div>
+<div id="auth-overlay" class="modal"><div class="modal-box text-center"><p class="orbitron text-cyan-400">SECURITY CHECK: NHẬP 1909</p></div></div>
 </body>
 </html>
