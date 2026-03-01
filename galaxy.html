@@ -2,15 +2,18 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>DITP | GALAXY COMMAND OS v26.2</title>
+    <title>DITP | GALAXY COMMAND OS v26.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { --neon: #31ada1; --bg: #010409; --active: #00f2ff; --gold: #ffcc00; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow-x: hidden; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
+        
+        /* 1. BACKGROUND ENGINE: STARS */
         #star-canvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
 
+        /* 2. ROADMAP LAYOUT & CONNECTORS */
         #mission-grid { 
             position: relative; z-index: 10; display: flex; flex-wrap: wrap; 
             gap: 50px; justify-content: center; padding: 50px 20px 200px 20px; 
@@ -21,20 +24,42 @@
             transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; 
             position: relative; backdrop-filter: blur(10px);
         }
-        .completed { border-color: var(--neon); box-shadow: 0 0 30px rgba(49, 173, 161, 0.4); }
+
+        /* --- PHẦN ĐIỀU CHỈNH THEO YÊU CẦU v26.3 --- */
         
+        /* 2.1. NODE ĐÃ HOÀN THÀNH: Sáng rõ trung thực */
+        .completed { 
+            opacity: 1;
+            filter: none;
+            border-color: var(--neon); 
+            box-shadow: 0 0 25px rgba(49, 173, 161, 0.3); 
+        }
+        
+        /* 2.2. NODE HIỆN TẠI (ACTIVE): Phát sáng rực rỡ và nhịp đập Galaxy */
         .active { 
+            opacity: 1;
+            filter: none;
             border-color: var(--active); 
-            box-shadow: 0 0 30px var(--active), inset 0 0 15px var(--active);
-            animation: galaxyPulse 1.5s infinite;
+            box-shadow: 0 0 35px var(--active), inset 0 0 15px var(--active);
+            animation: galaxyPulse 1.2s infinite;
             border-width: 3px;
         }
+
+        /* 2.3. NODE CHƯA TỚI LƯỢT (LOCKED): Làm mờ sâu để tạo sự tập trung */
+        .locked { 
+            opacity: 0.15; /* Làm mờ 85% */
+            filter: grayscale(1) blur(1px); /* Làm xám và nhòe nhẹ */
+            cursor: not-allowed;
+            pointer-events: none; /* Không cho phép tương tác khi chưa mở khóa */
+        }
+
         @keyframes galaxyPulse {
             0% { transform: scale(1); box-shadow: 0 0 20px var(--active); }
             50% { transform: scale(1.02); box-shadow: 0 0 40px var(--active); }
             100% { transform: scale(1); box-shadow: 0 0 20px var(--active); }
         }
 
+        /* 3. NEON PATHS (Roadmap Connections) */
         .node-card::after {
             content: ''; position: absolute; top: 50%; right: -52px;
             width: 50px; height: 2px; background: rgba(255, 255, 255, 0.05); z-index: -1;
@@ -42,6 +67,7 @@
         .completed::after { background: var(--neon); box-shadow: 0 0 15px var(--neon); }
         .node-card:nth-child(5n)::after { display: none; }
 
+        /* 4. UI COMPONENTS: MODALS & BUTTONS */
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; align-items:center; justify-content:center; backdrop-filter: blur(15px); }
         .modal-box { background: #0a192f; border: 1px solid var(--active); padding: 30px; border-radius: 20px; width: 480px; box-shadow: 0 0 50px rgba(0, 242, 255, 0.3); }
         input, textarea { background: rgba(0,0,0,0.5); border: 1px solid #333; color: white; width: 100%; padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 13px; border: 1px solid rgba(0, 242, 255, 0.2); }
@@ -60,7 +86,7 @@
             <img src="logo-ditp.png" class="w-14 h-14 object-contain" onerror="this.src='https://via.placeholder.com/64'">
             <div>
                 <h1 class="orbitron text-2xl font-black text-white tracking-[0.2em]">GALAXY COMMAND</h1>
-                <p id="system-msg" class="text-[10px] text-cyan-400 orbitron animate-pulse">SYSTEM VERSION 26.2 // AUDIT LOG: ON</p>
+                <p id="system-msg" class="text-[10px] text-cyan-400 orbitron animate-pulse">SYSTEM VERSION 26.3 // AUDIT LOG: ON</p>
             </div>
         </div>
         <div class="text-right flex items-center gap-8">
@@ -108,6 +134,7 @@
     const API_URL = "https://api.sheetbest.com/sheets/d418f240-85d9-4280-a1b2-3318dc6ba411";
     let missions = []; let isAdmin = false; let currentIdx = null; let isSyncing = false;
 
+    // --- ENGINE: STARFIELD ---
     const canvas = document.getElementById('star-canvas');
     const ctx = canvas.getContext('2d');
     let stars = [];
@@ -126,6 +153,7 @@
     }
     window.addEventListener('resize', initStars); initStars(); drawStars();
 
+    // --- DATA STREAM ---
     async function fetchData() {
         if (isSyncing) return;
         try {
@@ -144,6 +172,7 @@
         } catch (e) { document.getElementById('system-msg').innerText = "MẤT KẾT NỐI // RECONNECTING..."; }
     }
 
+    // --- RENDERING ENGINE ---
     function render() {
         const grid = document.getElementById('mission-grid');
         grid.innerHTML = '';
@@ -153,6 +182,7 @@
         document.getElementById('p-bar').style.width = p + '%';
 
         missions.forEach((m, i) => {
+            // Giữ nguyên Heading phân đoạn của bản v26.2
             if (i === 0) grid.innerHTML += `<div class="w-full orbitron text-center py-6 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] tracking-[1.5em] text-[12px] font-bold">--- STATION 01: GENESIS ---</div>`;
             if (i === 10) grid.innerHTML += `<div class="w-full orbitron text-center py-6 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] tracking-[1.5em] text-[12px] font-bold">--- STATION 02: TACTICS ---</div>`;
             
@@ -180,6 +210,7 @@
         });
     }
 
+    // --- INTERACTION LOGIC ---
     function handleNodeAction(idx) {
         if(!isAdmin) { showAuth(); return; }
         const m = missions[idx];
