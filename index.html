@@ -49,11 +49,13 @@
 <script>
     const API_URL = "https://sheet.best/api/sheets/8265ed92-cefc-4c7b-a0c2-dfeb265da692"; 
     let missions = [];
-    let isAdmin = false; let pin = "";
+    let isAdmin = false; 
+    let isSyncing = false; // Biến chống loạn dữ liệu
 
     async function init() {
         await fetchData();
-        setInterval(fetchData, 6000); // 6s cập nhật một lần để tiết kiệm API quota
+        // Tăng thời gian đồng bộ lên 8s để tránh xung đột lệnh PATCH và GET
+        setInterval(fetchData, 8000); 
         
         window.addEventListener('keydown', (e) => {
             if (document.getElementById('auth-overlay').style.display === 'flex') {
@@ -64,18 +66,25 @@
     }
 
     async function fetchData() {
+        if (isSyncing) return; // Nếu đang lưu dữ liệu thì không tải mới để tránh nháy đèn
         try {
             const res = await fetch(API_URL);
             const data = await res.json();
             
-            // Map dữ liệu dựa trên tiêu đề cột mới (id, status, title, note, doc)
-            missions = data.map((item, i) => ({
-                id: item.id || (i + 1),
-                title: item.title || "Node " + (i+1),
-                status: (item.status === "TRUE" || item.status === true),
-                note: item.note || "",
-                doc: item.doc || "#"
-            }));
+            // Xử lý mapping cực kỳ chặt chẽ
+            missions = data.map((item, i) => {
+                // Ép kiểu status về boolean chuẩn
+                let rawStatus = item.status;
+                let finalStatus = (rawStatus === "TRUE" || rawStatus === true || rawStatus === "true" || rawStatus === 1);
+                
+                return {
+                    id: parseInt(item.id) || (i + 1),
+                    title: item.title || "Node " + (i+1),
+                    status: finalStatus,
+                    note: item.note || "",
+                    doc: item.doc || "#"
+                };
+            });
             
             render();
             document.getElementById('status-label').innerText = "VŨ TRỤ ĐÃ KẾT NỐI (2-WAY)";
@@ -86,30 +95,42 @@
 
     async function toggleTask(id) {
         if (!isAdmin) { alert("YÊU CẦU COMMANDER LOGIN!"); return; }
+        
         const idx = id - 1;
         const currentM = missions[idx];
         
+        // Logic unlock tuần tự
         if (id > 1 && !missions[idx-1].status && !currentM.status) {
             alert("Vui lòng hoàn thành Node " + (id-1) + " trước!"); return;
         }
 
+        isSyncing = true; // Khóa đồng bộ để tập trung lưu dữ liệu
         const nextS = !currentM.status;
         missions[idx].status = nextS;
-        render();
+        render(); // Cập nhật đèn sáng ngay lập tức trên Web
 
-        // Gửi lệnh PATCH để cập nhật vào đúng cột "status"
         try {
+            // Gửi lệnh PATCH lên Sheet
             await fetch(`${API_URL}/${idx}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ "status": nextS ? "TRUE" : "FALSE" })
             });
-        } catch (e) { console.error("Lỗi lưu Sheet!"); }
+            console.log("Saved Node " + id);
+        } catch (e) { 
+            alert("Lỗi lưu Sheet! Đang thử lại..."); 
+        } finally {
+            // Đợi 2 giây sau khi lưu mới cho phép đồng bộ lại để tránh dữ liệu cũ đè lên dữ liệu mới vừa tích
+            setTimeout(() => { isSyncing = false; }, 2000);
+        }
     }
 
     function render() {
         const grid = document.getElementById('mission-grid');
+        if (!grid) return;
         grid.innerHTML = '';
+        
+        // Tính % dựa trên missions thực tế
         let done = missions.filter(m => m.status).length;
         document.getElementById('integrity-val').innerText = Math.round((done/missions.length)*100) + '%';
 
@@ -123,17 +144,19 @@
             card.innerHTML = `
                 <div class="flex justify-between items-start">
                     <span class="text-[8px] orbitron opacity-40">NODE ${String(m.id).padStart(2, '0')}</span>
-                    ${m.doc && m.doc !== "#" ? `<a href="${m.doc}" target="_blank" onclick="event.stopPropagation()" class="text-[9px] text-cyan-400 border-b border-cyan-400 font-bold">DOC</a>` : ''}
+                    ${m.doc && m.doc !== "#" && m.doc !== "" ? 
+                        `<a href="${m.doc}" target="_blank" onclick="event.stopPropagation()" class="text-[9px] text-cyan-400 border-b border-cyan-400 font-bold">DOC</a>` 
+                        : ''}
                 </div>
                 <div class="mt-2">
                     <h3 class="text-[11px] font-bold uppercase tracking-tight leading-tight">${m.title}</h3>
                     <p class="text-[9px] text-emerald-400 italic mt-2 line-clamp-2">${m.note}</p>
                 </div>
+                ${m.status ? '<div class="absolute bottom-2 right-2 w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>' : ''}
             `;
             grid.appendChild(card);
         });
     }
-
     function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; pin = ""; updateDots(); }
     function closeAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
     function clearPin() { pin = ""; updateDots(); }
@@ -157,3 +180,4 @@
 </script>
 </body>
 </html>
+
