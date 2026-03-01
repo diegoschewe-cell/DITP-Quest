@@ -9,10 +9,10 @@
         :root { --neon: #31ada1; --bg: #010409; }
         body { background: var(--bg); color: white; font-family: sans-serif; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .node-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; cursor: pointer; min-height: 120px; transition: 0.3s; }
+        .node-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; cursor: pointer; min-height: 125px; transition: 0.3s; position: relative; }
         .completed { border-color: var(--neon); box-shadow: 0 0 15px rgba(49, 173, 161, 0.2); }
-        .active { border-color: #00f2ff; }
-        .locked { opacity: 0.2; cursor: not-allowed; }
+        .active { border-color: #00f2ff; box-shadow: 0 0 10px rgba(0, 242, 255, 0.1); }
+        .locked { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
         .key-btn { width: 55px; height: 55px; border: 1px solid var(--neon); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--neon); cursor: pointer; font-family: 'Orbitron'; }
     </style>
 </head>
@@ -20,10 +20,10 @@
     <header class="flex justify-between items-center mb-8 bg-gray-900/50 p-6 rounded-xl border border-gray-800">
         <div>
             <h1 class="orbitron text-xl font-bold uppercase tracking-widest">GALAXY COMMAND</h1>
-            <p id="status-label" class="text-[9px] text-gray-500 mt-1 uppercase tracking-tighter">Đang kết nối qua API Hub...</p>
+            <p id="status-label" class="text-[9px] text-gray-500 mt-1 uppercase">Đang kết nối API Hub...</p>
         </div>
         <div class="text-right">
-            <p id="integrity-val" class="orbitron text-2xl font-bold text-white">0%</p>
+            <p id="integrity-val" class="orbitron text-2xl font-bold">0%</p>
             <button onclick="showAuth()" id="auth-btn" class="text-[9px] orbitron border border-cyan-500 px-3 py-1 rounded text-cyan-500 uppercase mt-2">Commander Login</button>
         </div>
     </header>
@@ -41,20 +41,19 @@
                 <button onclick="pressNum('7')" class="key-btn">7</button><button onclick="pressNum('8')" class="key-btn">8</button><button onclick="pressNum('9')" class="key-btn">9</button>
                 <button onclick="clearPin()" class="key-btn text-xs">CLR</button><button onclick="pressNum('0')" class="key-btn">0</button><button onclick="closeAuth()" class="key-btn text-xs text-red-500">ESC</button>
             </div>
-            <p class="mt-6 text-gray-500 text-[10px] orbitron tracking-widest uppercase">Nhập mã 1909</p>
         </div>
     </div>
 
 <script>
-    // DÁN LINK SHEETBEST CỦA ANH VÀO ĐÂY
-    const API_URL = "https://api.sheetbest.com/sheets/d418f240-85d9-4280-a1b2-3318dc6ba411"; 
+    // THAY LINK SHEETBEST CỦA ANH VÀO ĐÂY
+    const API_URL = "https://sheet.best/api/sheets/8265ed92-cefc-4c7b-a0c2-dfeb265da692"; 
     
     let missions = [];
     let isAdmin = false; let pin = "";
 
     async function init() {
-        await fetchData(); // Lấy dữ liệu lần đầu
-        setInterval(fetchData, 5000); // 5s quét Sheet 1 lần
+        await fetchData();
+        setInterval(fetchData, 5000); // Tự động cập nhật mỗi 5 giây
         
         window.addEventListener('keydown', (e) => {
             if (document.getElementById('auth-overlay').style.display === 'flex') {
@@ -68,18 +67,21 @@
         try {
             const res = await fetch(API_URL);
             const data = await res.json();
-            // SheetBest trả về mảng, ta map lại đúng cấu trúc của mình
+            
+            // ÁNH XẠ ĐÚNG TÊN CỘT TỪ ẢNH GOOGLE SHEET CỦA ANH
             missions = data.map((item, i) => ({
                 id: i + 1,
-                title: item["Tiêu đề"] || item["title"] || "Node " + (i+1),
-                status: (item["Trạng thái"] === "TRUE" || item["status"] === true),
-                note: item["Nhận xét"] || item["note"] || "",
-                doc: item["Tài liệu"] || item["doc"] || "#"
+                title: item["C"] || "Node " + (i+1), // Cột C: Tên nhiệm vụ
+                status: (item["B"] === "TRUE" || item["B"] === true), // Cột B: Trạng thái
+                note: item["D"] || "", // Cột D: Nhận xét
+                doc: item["E"] || "#"  // Cột E: Link tài liệu
             }));
+            
             render();
-            document.getElementById('status-label').innerText = "API HUB: CONNECTED";
+            document.getElementById('status-label').innerText = "API CONNECTED (LIVE)";
         } catch (e) {
-            document.getElementById('status-label').innerText = "API HUB: RECONNECTING...";
+            console.error(e);
+            document.getElementById('status-label').innerText = "CONNECTION ERROR";
         }
     }
 
@@ -88,28 +90,30 @@
         const idx = id - 1;
         const currentM = missions[idx];
         
-        // Logic unlock tuần tự
+        // Logic unlock tuần tự theo yêu cầu
         if (id > 1 && !missions[idx-1].status && !currentM.status) {
             alert("Phải xong Node " + (id-1) + " trước!"); return;
         }
 
         const nextStatus = !currentM.status;
         missions[idx].status = nextStatus;
-        render(); // Hiện ngay trên Web cho mượt
+        render();
 
-        // Ghi vào Sheet qua SheetBest (Ghi vào hàng thứ idx)
-        await fetch(`${API_URL}/${idx}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ "Trạng thái": nextStatus ? "TRUE" : "FALSE" })
-        });
+        // Ghi dữ liệu trực tiếp vào Sheet qua API
+        try {
+            await fetch(`${API_URL}/${idx}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "B": nextStatus ? "TRUE" : "FALSE" })
+            });
+        } catch (e) { alert("Lỗi lưu dữ liệu!"); }
     }
 
     function render() {
         const grid = document.getElementById('mission-grid');
         grid.innerHTML = '';
         let done = missions.filter(m => m.status).length;
-        document.getElementById('integrity-val').innerText = Math.round((done/50)*100) + '%';
+        document.getElementById('integrity-val').innerText = Math.round((done/missions.length)*100) + '%';
 
         missions.forEach((m, i) => {
             const avail = i === 0 || missions[i-1].status;
@@ -124,6 +128,7 @@
                 </div>
                 <h3 class="text-[10px] font-bold mt-2 uppercase leading-tight">${m.title}</h3>
                 <p class="text-[9px] text-emerald-400 mt-2 italic line-clamp-2">${m.note}</p>
+                ${m.status ? '<div class="absolute bottom-2 right-2 w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>' : ''}
             `;
             grid.appendChild(card);
         });
