@@ -2,37 +2,46 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DITP | GALAXY COMMAND CENTER</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { --neon: #31ada1; --bg: #010409; }
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow-x: hidden; background-image: radial-gradient(circle at 50% 50%, rgba(10, 25, 47, 0.8) 0%, rgba(1, 4, 9, 1) 100%); }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .hud-panel { background: rgba(1, 4, 9, 0.9); border: 1px solid rgba(49, 173, 161, 0.3); border-radius: 12px; }
+        .hud-panel { background: rgba(1, 4, 9, 0.9); border: 1px solid rgba(49, 173, 161, 0.3); border-radius: 12px; backdrop-filter: blur(10px); }
         .node-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; transition: 0.3s; cursor: pointer; min-height: 130px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
         .completed { border-color: var(--neon); box-shadow: 0 0 15px rgba(49, 173, 161, 0.2); }
         .active { border-color: #00f2ff; box-shadow: 0 0 10px rgba(0, 242, 255, 0.1); }
-        .locked { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
+        .locked { opacity: 0.25; cursor: not-allowed; filter: grayscale(1); }
+        .node-card:hover:not(.locked) { transform: translateY(-3px); background: rgba(255, 255, 255, 0.07); }
         .key-btn { width: 55px; height: 55px; border: 1px solid var(--neon); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--neon); cursor: pointer; font-family: 'Orbitron'; font-weight: bold; }
+        .section-divider { color: rgba(255, 255, 255, 0.3); letter-spacing: 0.4em; font-size: 10px; margin: 30px 0 15px 0; text-align: center; text-transform: uppercase; width: 100%; font-family: 'Orbitron'; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <header class="hud-panel p-6 mb-8 flex justify-between items-center">
-        <div>
-            <h1 class="orbitron text-xl font-bold uppercase tracking-widest text-white">GALAXY COMMAND</h1>
-            <p id="status-label" class="text-[9px] text-gray-500 uppercase mt-1">Đang truy vấn API Hub...</p>
+    <header class="hud-panel p-6 mb-8 flex flex-col md:flex-row justify-between items-center">
+        <div class="flex items-center gap-5">
+            <img src="Logo-chia-se-trach-nhiem.png" class="w-14 h-14 object-contain" onerror="this.src='https://via.placeholder.com/64'">
+            <div>
+                <h1 class="orbitron text-xl font-bold uppercase tracking-widest text-white">GALAXY COMMAND</h1>
+                <div class="flex items-center gap-3 mt-1">
+                    <span class="text-[10px] orbitron text-cyan-400">COMMANDER: HIẾU NGUYỄN</span>
+                    <p id="status-label" class="text-[9px] text-gray-500 uppercase tracking-tighter ml-4">Initializing API...</p>
+                </div>
+            </div>
         </div>
         <div class="text-right">
             <p id="integrity-val" class="orbitron text-2xl font-bold text-white">0%</p>
-            <button onclick="showAuth()" id="auth-btn" class="text-[9px] orbitron border border-cyan-500 px-4 py-1.5 rounded text-cyan-500 uppercase mt-2">Commander Login</button>
+            <button onclick="showAuth()" id="auth-btn" class="text-[9px] orbitron border border-cyan-500 px-4 py-1.5 rounded text-cyan-500 mt-2 hover:bg-cyan-500/10 transition">COMMANDER AUTH</button>
         </div>
     </header>
 
-    <div id="mission-grid" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div>
+    <div id="mission-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"></div>
 
-    <div id="auth-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:1000; align-items:center; justify-content:center; backdrop-filter: blur(15px);">
+    <div id="auth-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.96); z-index:1000; align-items:center; justify-content:center; backdrop-filter: blur(15px);">
         <div class="text-center">
             <div class="flex gap-4 mb-10 justify-center" id="auth-dots">
                 <div class="w-3 h-3 rounded-full border border-white"></div><div class="w-3 h-3 rounded-full border border-white"></div><div class="w-3 h-3 rounded-full border border-white"></div><div class="w-3 h-3 rounded-full border border-white"></div>
@@ -43,53 +52,57 @@
                 <button onclick="pressNum('7')" class="key-btn">7</button><button onclick="pressNum('8')" class="key-btn">8</button><button onclick="pressNum('9')" class="key-btn">9</button>
                 <button onclick="clearPin()" class="key-btn text-xs">CLR</button><button onclick="pressNum('0')" class="key-btn">0</button><button onclick="closeAuth()" class="key-btn text-xs text-red-500">ESC</button>
             </div>
+            <p class="mt-6 text-gray-500 text-[10px] orbitron tracking-widest uppercase">Nhập mã 1909</p>
         </div>
     </div>
 
 <script>
+    // LINK API SHEETBEST CỦA ANH
     const API_URL = "https://api.sheetbest.com/sheets/d418f240-85d9-4280-a1b2-3318dc6ba411"; 
+    
     let missions = [];
     let isAdmin = false; 
-    let isSyncing = false; // Biến chống loạn dữ liệu
+    let pin = "";
+    let isSyncing = false; 
 
     async function init() {
         await fetchData();
-        // Tăng thời gian đồng bộ lên 8s để tránh xung đột lệnh PATCH và GET
-        setInterval(fetchData, 8000); 
+        setInterval(fetchData, 8000); // 8 giây cập nhật 1 lần để tránh xung đột
         
         window.addEventListener('keydown', (e) => {
             if (document.getElementById('auth-overlay').style.display === 'flex') {
                 if (e.key >= '0' && e.key <= '9') pressNum(e.key);
                 if (e.key === 'Backspace') clearPin();
+                if (e.key === 'Escape') closeAuth();
             }
         });
     }
 
     async function fetchData() {
-        if (isSyncing) return; // Nếu đang lưu dữ liệu thì không tải mới để tránh nháy đèn
+        if (isSyncing) return; 
         try {
             const res = await fetch(API_URL);
             const data = await res.json();
             
-            // Xử lý mapping cực kỳ chặt chẽ
+            // Mapping chuẩn hóa dữ liệu từ SheetBest
             missions = data.map((item, i) => {
-                // Ép kiểu status về boolean chuẩn
-                let rawStatus = item.status;
-                let finalStatus = (rawStatus === "TRUE" || rawStatus === true || rawStatus === "true" || rawStatus === 1);
-                
+                const s = item.status;
                 return {
                     id: parseInt(item.id) || (i + 1),
                     title: item.title || "Node " + (i+1),
-                    status: finalStatus,
+                    status: (s === "TRUE" || s === true || s === "true"),
                     note: item.note || "",
                     doc: item.doc || "#"
                 };
             });
             
             render();
-            document.getElementById('status-label').innerText = "VŨ TRỤ ĐÃ KẾT NỐI (2-WAY)";
+            const lbl = document.getElementById('status-label');
+            lbl.innerText = "API CONNECTED (REAL-TIME)";
+            lbl.className = "text-[9px] text-emerald-400 uppercase tracking-tighter ml-4";
         } catch (e) {
-            document.getElementById('status-label').innerText = "MẤT KẾT NỐI API";
+            document.getElementById('status-label').innerText = "API DISCONNECTED";
+            document.getElementById('status-label').className = "text-[9px] text-red-500 uppercase tracking-tighter ml-4";
         }
     }
 
@@ -101,27 +114,25 @@
         
         // Logic unlock tuần tự
         if (id > 1 && !missions[idx-1].status && !currentM.status) {
-            alert("Vui lòng hoàn thành Node " + (id-1) + " trước!"); return;
+            alert("Phải hoàn thành Node " + (id-1) + " trước!"); return;
         }
 
-        isSyncing = true; // Khóa đồng bộ để tập trung lưu dữ liệu
-        const nextS = !currentM.status;
-        missions[idx].status = nextS;
-        render(); // Cập nhật đèn sáng ngay lập tức trên Web
+        isSyncing = true; 
+        const nextStatus = !currentM.status;
+        missions[idx].status = nextStatus;
+        render(); 
 
         try {
-            // Gửi lệnh PATCH lên Sheet
+            // PATCH: Ghi đè chỉ cột status của hàng tương ứng
             await fetch(`${API_URL}/${idx}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ "status": nextS ? "TRUE" : "FALSE" })
+                body: JSON.stringify({ "status": nextStatus ? "TRUE" : "FALSE" })
             });
-            console.log("Saved Node " + id);
         } catch (e) { 
-            alert("Lỗi lưu Sheet! Đang thử lại..."); 
+            console.error("Save Error:", e);
         } finally {
-            // Đợi 2 giây sau khi lưu mới cho phép đồng bộ lại để tránh dữ liệu cũ đè lên dữ liệu mới vừa tích
-            setTimeout(() => { isSyncing = false; }, 2000);
+            setTimeout(() => { isSyncing = false; }, 3000);
         }
     }
 
@@ -130,11 +141,13 @@
         if (!grid) return;
         grid.innerHTML = '';
         
-        // Tính % dựa trên missions thực tế
         let done = missions.filter(m => m.status).length;
         document.getElementById('integrity-val').innerText = Math.round((done/missions.length)*100) + '%';
 
         missions.forEach((m, i) => {
+            if (i === 0) grid.innerHTML += `<div class="col-span-full section-divider">--- STATION 01: GENESIS ---</div>`;
+            if (i === 10) grid.innerHTML += `<div class="col-span-full section-divider">--- STATION 02: TACTICS ---</div>`;
+            
             const avail = i === 0 || missions[i-1].status;
             const state = m.status ? 'completed' : (avail ? 'active' : 'locked');
             
@@ -145,18 +158,19 @@
                 <div class="flex justify-between items-start">
                     <span class="text-[8px] orbitron opacity-40">NODE ${String(m.id).padStart(2, '0')}</span>
                     ${m.doc && m.doc !== "#" && m.doc !== "" ? 
-                        `<a href="${m.doc}" target="_blank" onclick="event.stopPropagation()" class="text-[9px] text-cyan-400 border-b border-cyan-400 font-bold">DOC</a>` 
+                        `<a href="${m.doc}" target="_blank" onclick="event.stopPropagation()" class="text-[9px] text-cyan-400 border-b border-cyan-400 font-bold hover:text-white transition">DOC</a>` 
                         : ''}
                 </div>
                 <div class="mt-2">
                     <h3 class="text-[11px] font-bold uppercase tracking-tight leading-tight">${m.title}</h3>
                     <p class="text-[9px] text-emerald-400 italic mt-2 line-clamp-2">${m.note}</p>
                 </div>
-                ${m.status ? '<div class="absolute bottom-2 right-2 w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>' : ''}
+                ${m.status ? '<div class="absolute bottom-2 right-2 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_5px_#10b981]"></div>' : ''}
             `;
             grid.appendChild(card);
         });
     }
+
     function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; pin = ""; updateDots(); }
     function closeAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
     function clearPin() { pin = ""; updateDots(); }
@@ -166,8 +180,9 @@
             if (pin === "1909") {
                 isAdmin = true; 
                 document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('auth-btn').innerText = "COMMANDER ACTIVE";
-                document.getElementById('auth-btn').className = "text-[9px] orbitron bg-emerald-600 px-4 py-1.5 rounded text-white mt-2";
+                const btn = document.getElementById('auth-btn');
+                btn.innerText = "COMMANDER ACTIVE";
+                btn.className = "text-[9px] orbitron bg-emerald-600 px-4 py-1.5 rounded text-white mt-2 shadow-[0_0_10px_#059669]";
                 render();
             } else if (pin.length === 4) setTimeout(clearPin, 300);
         }
@@ -176,9 +191,8 @@
         const ds = document.getElementById('auth-dots').children;
         for(let i=0; i<4; i++) ds[i].style.background = pin.length > i ? '#31ada1' : 'transparent';
     }
+
     init();
 </script>
 </body>
 </html>
-
-
