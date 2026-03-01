@@ -249,19 +249,43 @@
     }
 
     // HÀM 4.1. LƯU DỮ LIỆU TỔNG HỢP: Đẩy Title, Note, Doc, Status và Timestamp lên Sheet
-    async function saveNodeData() {
+        async function saveNodeData() {
         if (currentIdx === null) return;
         isSyncing = true;
         const m = missions[currentIdx];
         
-        // 1. Thu thập dữ liệu từ các ô nhập liệu trong Modal
+        // Gói dữ liệu dùng Key khớp 100% với hàng tiêu đề trong ảnh image_af3e27.png
         const upData = {
-            C: document.getElementById('m-title').value, // Cập nhật Tên (Cột C)
-            D: document.getElementById('m-note').value,  // Cập nhật Ghi chú (Cột D)
-            E: document.getElementById('m-doc').value,   // Cập nhật Links (Cột E)
-            B: m.status ? "TRUE" : "FALSE",              // Cập nhật Trạng thái đèn (Cột B)
-            F: m.ts || ""                                // Cập nhật mốc thời gian (Cột F)
+            "title": document.getElementById('m-title').value,
+            "note": document.getElementById('m-note').value,
+            "doc": document.getElementById('m-doc').value,
+            "status": m.status ? "TRUE" : "FALSE",
+            "timestamp": m.ts || ""
         };
+
+        // Cập nhật bộ nhớ tạm trên Web
+        Object.assign(m, { title: upData.title, note: upData.note, doc: upData.doc });
+        render(); 
+        closeModal('edit-modal');
+
+        try {
+            // Gửi lệnh ghi đè lên hàng tương ứng (idx)
+            const response = await fetch(`${API_URL}/${currentIdx}`, { 
+                method: "PATCH", 
+                headers: {"Content-Type":"application/json"}, 
+                body: JSON.stringify(upData) 
+            });
+            
+            if(response.ok) {
+                document.getElementById('system-msg').innerText = "GALAXY SYNC: NHIỆM VỤ ĐÃ ĐƯỢC GHI LẠI";
+            }
+        } catch (e) {
+            document.getElementById('system-msg').innerText = "GALAXY SYNC: LỖI KẾT NỐI NGƯỢC";
+        }
+
+        // Đợi 3 giây để Sheet ổn định rồi mới cho phép fetch dữ liệu mới
+        setTimeout(() => { isSyncing = false; fetchData(); }, 3000);
+        }
 
         // 2. Cập nhật ngay lập tức vào bộ nhớ tạm (Missions array) để Web hiển thị không độ trễ
         Object.assign(m, {
@@ -315,11 +339,25 @@
     
     // --- HÀM 6: CONFIRM MISSION ---
     async function markNodeComplete() {
-    if(!currentIdx && currentIdx !== 0) return;
-    const m = missions[currentIdx];
-    if(!m.note || !m.doc) {
-        alert("SECURITY: Cần ghi chú và link trước khi chốt!");
-        return;
+        if (currentIdx === null) return;
+        
+        // LẤY DỮ LIỆU THỰC TẾ TỪ Ô NHẬP LIỆU (Fix lỗi báo SECURITY)
+        const noteInput = document.getElementById('m-note').value;
+        const docInput = document.getElementById('m-doc').value;
+        
+        if(!noteInput || noteInput.length < 2 || !docInput) {
+            alert("SECURITY: Anh Hiếu cần nhập đủ Ghi chú báo cáo và Link trước khi chốt!");
+            return;
+        }
+
+        const m = missions[currentIdx];
+        m.status = true; // Bật đèn xanh
+        const now = new Date();
+        // Ghi mốc thời gian hoàn thành theo giờ Việt Nam
+        m.ts = `${now.getDate()}/${now.getMonth()+1} ${now.getHours()}:${now.getMinutes()}`;
+        
+        // Kích hoạt chuỗi lưu dữ liệu lên Sheet
+        await saveNodeData();
     }
     m.status = true;
     const now = new Date();
