@@ -7,24 +7,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --neon: #31ada1; --bg: #010409; }
-        body { background: var(--bg); color: white; font-family: sans-serif; }
+        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; }
         .orbitron { font-family: 'Orbitron', sans-serif; }
-        .node-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; cursor: pointer; min-height: 125px; transition: 0.3s; position: relative; }
+        .hud-panel { background: rgba(1, 4, 9, 0.9); border: 1px solid rgba(49, 173, 161, 0.3); border-radius: 12px; }
+        .node-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; transition: 0.3s; cursor: pointer; min-height: 130px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
         .completed { border-color: var(--neon); box-shadow: 0 0 15px rgba(49, 173, 161, 0.2); }
         .active { border-color: #00f2ff; box-shadow: 0 0 10px rgba(0, 242, 255, 0.1); }
         .locked { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
-        .key-btn { width: 55px; height: 55px; border: 1px solid var(--neon); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--neon); cursor: pointer; font-family: 'Orbitron'; }
+        .key-btn { width: 55px; height: 55px; border: 1px solid var(--neon); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--neon); cursor: pointer; font-family: 'Orbitron'; font-weight: bold; }
     </style>
 </head>
-<body class="p-6">
-    <header class="flex justify-between items-center mb-8 bg-gray-900/50 p-6 rounded-xl border border-gray-800">
+<body class="p-4 md:p-8">
+
+    <header class="hud-panel p-6 mb-8 flex justify-between items-center">
         <div>
-            <h1 class="orbitron text-xl font-bold uppercase tracking-widest">GALAXY COMMAND</h1>
-            <p id="status-label" class="text-[9px] text-gray-500 mt-1 uppercase">Đang kết nối API Hub...</p>
+            <h1 class="orbitron text-xl font-bold uppercase tracking-widest text-white">GALAXY COMMAND</h1>
+            <p id="status-label" class="text-[9px] text-gray-500 uppercase mt-1">Đang truy vấn API Hub...</p>
         </div>
         <div class="text-right">
-            <p id="integrity-val" class="orbitron text-2xl font-bold">0%</p>
-            <button onclick="showAuth()" id="auth-btn" class="text-[9px] orbitron border border-cyan-500 px-3 py-1 rounded text-cyan-500 uppercase mt-2">Commander Login</button>
+            <p id="integrity-val" class="orbitron text-2xl font-bold text-white">0%</p>
+            <button onclick="showAuth()" id="auth-btn" class="text-[9px] orbitron border border-cyan-500 px-4 py-1.5 rounded text-cyan-500 uppercase mt-2">Commander Login</button>
         </div>
     </header>
 
@@ -45,15 +47,13 @@
     </div>
 
 <script>
-    // THAY LINK SHEETBEST CỦA ANH VÀO ĐÂY
     const API_URL = "https://sheet.best/api/sheets/8265ed92-cefc-4c7b-a0c2-dfeb265da692"; 
-    
     let missions = [];
     let isAdmin = false; let pin = "";
 
     async function init() {
         await fetchData();
-        setInterval(fetchData, 5000); // Tự động cập nhật mỗi 5 giây
+        setInterval(fetchData, 6000); // 6s cập nhật một lần để tiết kiệm API quota
         
         window.addEventListener('keydown', (e) => {
             if (document.getElementById('auth-overlay').style.display === 'flex') {
@@ -68,20 +68,19 @@
             const res = await fetch(API_URL);
             const data = await res.json();
             
-            // ÁNH XẠ ĐÚNG TÊN CỘT TỪ ẢNH GOOGLE SHEET CỦA ANH
+            // Map dữ liệu dựa trên tiêu đề cột mới (id, status, title, note, doc)
             missions = data.map((item, i) => ({
-                id: i + 1,
-                title: item["C"] || "Node " + (i+1), // Cột C: Tên nhiệm vụ
-                status: (item["B"] === "TRUE" || item["B"] === true), // Cột B: Trạng thái
-                note: item["D"] || "", // Cột D: Nhận xét
-                doc: item["E"] || "#"  // Cột E: Link tài liệu
+                id: item.id || (i + 1),
+                title: item.title || "Node " + (i+1),
+                status: (item.status === "TRUE" || item.status === true),
+                note: item.note || "",
+                doc: item.doc || "#"
             }));
             
             render();
-            document.getElementById('status-label').innerText = "API CONNECTED (LIVE)";
+            document.getElementById('status-label').innerText = "VŨ TRỤ ĐÃ KẾT NỐI (2-WAY)";
         } catch (e) {
-            console.error(e);
-            document.getElementById('status-label').innerText = "CONNECTION ERROR";
+            document.getElementById('status-label').innerText = "MẤT KẾT NỐI API";
         }
     }
 
@@ -90,23 +89,22 @@
         const idx = id - 1;
         const currentM = missions[idx];
         
-        // Logic unlock tuần tự theo yêu cầu
         if (id > 1 && !missions[idx-1].status && !currentM.status) {
-            alert("Phải xong Node " + (id-1) + " trước!"); return;
+            alert("Vui lòng hoàn thành Node " + (id-1) + " trước!"); return;
         }
 
-        const nextStatus = !currentM.status;
-        missions[idx].status = nextStatus;
+        const nextS = !currentM.status;
+        missions[idx].status = nextS;
         render();
 
-        // Ghi dữ liệu trực tiếp vào Sheet qua API
+        // Gửi lệnh PATCH để cập nhật vào đúng cột "status"
         try {
             await fetch(`${API_URL}/${idx}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ "B": nextStatus ? "TRUE" : "FALSE" })
+                body: JSON.stringify({ "status": nextS ? "TRUE" : "FALSE" })
             });
-        } catch (e) { alert("Lỗi lưu dữ liệu!"); }
+        } catch (e) { console.error("Lỗi lưu Sheet!"); }
     }
 
     function render() {
@@ -118,17 +116,19 @@
         missions.forEach((m, i) => {
             const avail = i === 0 || missions[i-1].status;
             const state = m.status ? 'completed' : (avail ? 'active' : 'locked');
+            
             const card = document.createElement('div');
             card.className = `node-card ${state}`;
             card.onclick = () => toggleTask(m.id);
             card.innerHTML = `
                 <div class="flex justify-between items-start">
-                    <span class="text-[8px] orbitron opacity-50">NODE ${m.id}</span>
-                    ${m.doc && m.doc !== "#" ? `<a href="${m.doc}" target="_blank" onclick="event.stopPropagation()" class="text-[9px] text-cyan-400 border-b border-cyan-400">DOC</a>` : ''}
+                    <span class="text-[8px] orbitron opacity-40">NODE ${String(m.id).padStart(2, '0')}</span>
+                    ${m.doc && m.doc !== "#" ? `<a href="${m.doc}" target="_blank" onclick="event.stopPropagation()" class="text-[9px] text-cyan-400 border-b border-cyan-400 font-bold">DOC</a>` : ''}
                 </div>
-                <h3 class="text-[10px] font-bold mt-2 uppercase leading-tight">${m.title}</h3>
-                <p class="text-[9px] text-emerald-400 mt-2 italic line-clamp-2">${m.note}</p>
-                ${m.status ? '<div class="absolute bottom-2 right-2 w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>' : ''}
+                <div class="mt-2">
+                    <h3 class="text-[11px] font-bold uppercase tracking-tight leading-tight">${m.title}</h3>
+                    <p class="text-[9px] text-emerald-400 italic mt-2 line-clamp-2">${m.note}</p>
+                </div>
             `;
             grid.appendChild(card);
         });
@@ -141,9 +141,10 @@
         if (pin.length < 4) {
             pin += n; updateDots();
             if (pin === "1909") {
-                isAdmin = true; document.getElementById('auth-overlay').style.display = 'none';
+                isAdmin = true; 
+                document.getElementById('auth-overlay').style.display = 'none';
                 document.getElementById('auth-btn').innerText = "COMMANDER ACTIVE";
-                document.getElementById('auth-btn').className = "text-[9px] orbitron bg-emerald-600 px-3 py-1 rounded text-white mt-2";
+                document.getElementById('auth-btn').className = "text-[9px] orbitron bg-emerald-600 px-4 py-1.5 rounded text-white mt-2";
                 render();
             } else if (pin.length === 4) setTimeout(clearPin, 300);
         }
