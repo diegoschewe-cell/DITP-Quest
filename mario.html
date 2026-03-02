@@ -1,1 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>DITP | MARIO WORLD v3.4 OFFICIAL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root { --mario-sky: #5C94FC; }
+        body { 
+            background: var(--mario-sky); color: #fff; 
+            font-family: 'Press Start 2P', cursive; margin: 0;
+            image-rendering: pixelated; overflow-x: hidden;
+        }
 
+        /* NỀN MAP CHUẨN CỦA ANH */
+        .game-world {
+            position: relative; width: 100%; min-height: 2500px;
+            background: url('./assets/map_bg.png') repeat-y center top;
+            background-size: 100% auto;
+        }
+
+        .node-anchor {
+            position: absolute; width: 140px; display: flex; 
+            flex-direction: column; align-items: center; cursor: pointer;
+            z-index: 10;
+        }
+
+        /* HIỂN THỊ MARIO & BLOCKS DẠNG GIF/PNG */
+        .mario-char { width: 64px; height: 64px; object-fit: contain; margin-bottom: 5px; animation: bounce 0.6s infinite alternate; }
+        .block-asset { width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(4px 4px 0px rgba(0,0,0,0.5)); }
+
+        .node-label {
+            background: rgba(0,0,0,0.85); padding: 12px; border: 3px solid #fff;
+            font-size: 8px; margin-top: 12px; text-align: center; width: 220px;
+            box-shadow: 6px 6px 0px #000; color: #fff; line-height: 1.6;
+        }
+
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-15px); } }
+        header { background: #000; border-bottom: 6px solid #E45C10; padding: 25px; sticky top: 0; z-index: 100; display: flex; justify-content: space-between; }
+        
+        /* Hiệu ứng nhấp nháy cho text quan trọng */
+        .blink { animation: blink-animation 1s steps(5, start) infinite; }
+        @keyframes blink-animation { to { visibility: hidden; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1 class="text-lg tracking-tighter">MARIO ADVENTURE v3.4</h1>
+            <p class="text-[8px] text-yellow-400 mt-2 blink">WORLD 1-1 // MISSION ACTIVE</p>
+        </div>
+        <div class="text-[10px] flex gap-10">
+            <div>COINS: <span id="coin-val" class="text-yellow-400">00</span></div>
+            <div>SCORE: <span id="score-val">000000</span></div>
+        </div>
+    </header>
+
+    <div class="game-world" id="mission-grid"></div>
+
+<script>
+    // --- KHỚP VỚI DANH SÁCH FILE .GIF CỦA ANH ---
+    const ASSETS = {
+        mario: './assets/mario_jump.gif', 
+        blockActive: './assets/block_q.gif',
+        blockDone: './assets/block_done.png',
+        blockLocked: './assets/block_locked.png'
+    };
+
+    const API_URL = "https://api.sheetbest.com/sheets/d418f240-85d9-4280-a1b2-3318dc6ba411";
+    let missions = [];
+
+    async function fetchData() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            missions = data.map((item, i) => ({
+                id: i + 1,
+                title: item.title || item.C || "STAGE " + (i+1),
+                status: (item.status === "TRUE" || item.B === "TRUE")
+            }));
+            render();
+        } catch (e) { console.log("LỖI KẾT NỐI DỮ LIỆU"); }
+    }
+
+    function render() {
+        const grid = document.getElementById('mission-grid');
+        grid.innerHTML = '';
+        let done = missions.filter(m => m.status).length;
+        document.getElementById('coin-val').innerText = String(done).padStart(2,'0');
+        document.getElementById('score-val').innerText = String(done * 1000).padStart(6,'0');
+
+        missions.forEach((m, i) => {
+            const isPrevDone = i === 0 || missions[i-1].status;
+            const state = m.status ? 'done' : (isPrevDone ? 'active' : 'locked');
+            
+            const node = document.createElement('div');
+            node.className = 'node-anchor';
+            
+            // Sắp xếp Zic-zac chuẩn bản đồ Mario
+            node.style.top = (350 + (i * 380)) + 'px';
+            node.style.left = (i % 2 === 0) ? '18%' : '62%';
+
+            let assetPath = ASSETS.blockLocked;
+            if(state === 'done') assetPath = ASSETS.blockDone;
+            if(state === 'active') assetPath = ASSETS.blockActive;
+
+            node.innerHTML = `
+                ${state === 'active' ? `<img class="mario-char" src="${ASSETS.mario}">` : ''}
+                <img class="block-asset" src="${assetPath}">
+                <div class="node-label">
+                    <div style="color:#F8D824; margin-bottom:6px; font-size:10px">COURSE ${m.id}</div>
+                    ${m.title}
+                </div>
+            `;
+            grid.appendChild(node);
+        });
+    }
+    fetchData();
+    // Tự động cập nhật sau mỗi 20 giây
+    setInterval(fetchData, 20000);
+</script>
+</body>
+</html>
